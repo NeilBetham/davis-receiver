@@ -1,6 +1,6 @@
 #pragma once
 
-#include "register_helpers.h"
+#include "registers/register_helpers.h"
 
 // GPIO Register Offsets
 #define GPIO_DATA_OFFSET     0x000003FC

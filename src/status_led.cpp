@@ -1,5 +1,7 @@
 #include "status_led.h"
 
+#include "registers/gpio.h"
+
 void init_status_led() {
   PORT_R_DIR = 0x000000FF;
   PORT_R_ODR = 0x000000FF;

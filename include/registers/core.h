@@ -1,6 +1,6 @@
 #pragma once
 
-#include "register_helpers.h"
+#include "registers/register_helpers.h"
 
 // Interrupt Enable / Disable
 #define GIE() __asm__("CPSIE i");

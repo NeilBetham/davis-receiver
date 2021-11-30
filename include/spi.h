@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ssi.h"
+#include <stdint.h>
 
 // Simple SPI Interface
 uint32_t spi_init(uint8_t ssi_port);

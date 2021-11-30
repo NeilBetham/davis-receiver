@@ -1,36 +1,175 @@
-/*
-* Copyright (c) 2018, Shawn D'silva <shawn@shawndsilva.com>
-* All rights reserved.
-*
-*  This file is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This file is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this library.  If not, see <http://www.gnu.org/licenses/>.
-*
-* File:			startup.c
-* Author:		Shawn D'silva <https://www.shawndsilva.com>.
-* Version:		1.0.0.
-* Description:	startup file for the TM4C Launchpad board,defines the vector table,
-  and most importantly the Reset_Handler enabling the TM4C to execute the main program when the <RESET>
-  button is pressed on board
-*/
-#include "startup.h"
+#include "registers/core.h"
 
-// +-----------------------------------------------------------------------------------+
-// +										            Vector Table                                       +
-// +-----------------------------------------------------------------------------------+
+// Stack address provided by the linker
+extern int _stack_ptr;
 
-__attribute__((section(".vector_table"))) //marks this vector table as a part of the section "".vector_table"
-//in the linker script
-const vector_table_t vectors[] = {
+// Weak linkage for default handlers
+#define DEFAULT __attribute__((weak, alias("Default_Handler")))
+
+// Default Handler that loops indefinitely
+extern "C" void Default_Handler() { while(1); };
+
+// System Exception Handlers
+void Reset_Handler(void);
+DEFAULT void NMI_Handler(void);
+DEFAULT void SVC_Handler(void);
+DEFAULT void DebugMonitor_Handler(void);
+DEFAULT void PendSV_Handler(void);
+DEFAULT void SysTick_Handler(void);
+
+// Fault Handlers
+DEFAULT void HardFault_Handler(void);
+DEFAULT void MemManageFault_Handler(void);
+DEFAULT void BusFault_Handler(void);
+DEFAULT void UsageFault_Handler(void);
+
+// Peripheral ISRs
+DEFAULT void ADC0Sequence0_ISR(void);
+DEFAULT void ADC0Sequence1_ISR(void);
+DEFAULT void ADC0Sequence2_ISR(void);
+DEFAULT void ADC0Sequence3_ISR(void);
+DEFAULT void ADC1Sequence0_ISR(void);
+DEFAULT void ADC1Sequence1_ISR(void);
+DEFAULT void ADC1Sequence2_ISR(void);
+DEFAULT void ADC1Sequence3_ISR(void);
+
+DEFAULT void AES_ISR(void);
+
+DEFAULT void AnalogComparator0_ISR(void);
+DEFAULT void AnalogComparator1_ISR(void);
+DEFAULT void AnalogComparator2_ISR(void);
+
+DEFAULT void CAN0_ISR(void);
+DEFAULT void CAN1_ISR(void);
+
+DEFAULT void DES_ISR(void);
+
+DEFAULT void EPI0_ISR(void);
+
+DEFAULT void EthernetMac_ISR(void);
+
+DEFAULT void FlashCtrl_ISR(void);
+
+DEFAULT void FPE_ISR(void);
+
+DEFAULT void GPIOPortA_ISR(void);
+DEFAULT void GPIOPortB_ISR(void);
+DEFAULT void GPIOPortC_ISR(void);
+DEFAULT void GPIOPortD_ISR(void);
+DEFAULT void GPIOPortE_ISR(void);
+DEFAULT void GPIOPortF_ISR(void);
+DEFAULT void GPIOPortG_ISR(void);
+DEFAULT void GPIOPortH_ISR(void);
+DEFAULT void GPIOPortJ_ISR(void);
+DEFAULT void GPIOPortK_ISR(void);
+DEFAULT void GPIOPortL_ISR(void);
+DEFAULT void GPIOPortM_ISR(void);
+DEFAULT void GPIOPortN_ISR(void);
+DEFAULT void GPIOPortP_ISR(void);
+DEFAULT void GPIOPortP0_ISR(void);
+DEFAULT void GPIOPortP1_ISR(void);
+DEFAULT void GPIOPortP2_ISR(void);
+DEFAULT void GPIOPortP3_ISR(void);
+DEFAULT void GPIOPortP4_ISR(void);
+DEFAULT void GPIOPortP5_ISR(void);
+DEFAULT void GPIOPortP6_ISR(void);
+DEFAULT void GPIOPortP7_ISR(void);
+DEFAULT void GPIOPortQ_ISR(void);
+DEFAULT void GPIOPortQ0_ISR(void);
+DEFAULT void GPIOPortQ1_ISR(void);
+DEFAULT void GPIOPortQ2_ISR(void);
+DEFAULT void GPIOPortQ3_ISR(void);
+DEFAULT void GPIOPortQ4_ISR(void);
+DEFAULT void GPIOPortQ5_ISR(void);
+DEFAULT void GPIOPortQ6_ISR(void);
+DEFAULT void GPIOPortQ7_ISR(void);
+DEFAULT void GPIOPortR_ISR(void);
+DEFAULT void GPIOPortS_ISR(void);
+DEFAULT void GPIOPortT_ISR(void);
+
+DEFAULT void Hibernation_ISR(void);
+
+DEFAULT void I2C0_ISR(void);
+DEFAULT void I2C1_ISR(void);
+DEFAULT void I2C2_ISR(void);
+DEFAULT void I2C3_ISR(void);
+DEFAULT void I2C4_ISR(void);
+DEFAULT void I2C5_ISR(void);
+DEFAULT void I2C6_ISR(void);
+DEFAULT void I2C7_ISR(void);
+DEFAULT void I2C8_ISR(void);
+DEFAULT void I2C9_ISR(void);
+
+DEFAULT void PWM0Fault_ISR(void);
+DEFAULT void PWM0Generator0_ISR(void);
+DEFAULT void PWM0Generator1_ISR(void);
+DEFAULT void PWM0Generator2_ISR(void);
+DEFAULT void PWM0Generator3_ISR(void);
+DEFAULT void PWM1Fault_ISR(void);
+DEFAULT void PWM1Generator0_ISR(void);
+DEFAULT void PWM1Generator1_ISR(void);
+DEFAULT void PWM1Generator2_ISR(void);
+DEFAULT void PWM1Generator3_ISR(void);
+
+DEFAULT void QEI0_ISR(void);
+DEFAULT void QEI1_ISR(void);
+
+DEFAULT void SHA_MD5_ISR(void);
+
+DEFAULT void SSI0_ISR(void);
+DEFAULT void SSI1_ISR(void);
+DEFAULT void SSI2_ISR(void);
+DEFAULT void SSI3_ISR(void);
+
+DEFAULT void SystemCtrl_ISR(void);
+
+DEFAULT void SystemException_ISR(void);
+
+DEFAULT void Tamper_ISR(void);
+
+DEFAULT void Timer0A_ISR(void);
+DEFAULT void Timer0B_ISR(void);
+DEFAULT void Timer1A_ISR(void);
+DEFAULT void Timer1B_ISR(void);
+DEFAULT void Timer2A_ISR(void);
+DEFAULT void Timer2B_ISR(void);
+DEFAULT void Timer3A_ISR(void);
+DEFAULT void Timer3B_ISR(void);
+DEFAULT void Timer4A_ISR(void);
+DEFAULT void Timer4B_ISR(void);
+DEFAULT void Timer5A_ISR(void);
+DEFAULT void Timer5B_ISR(void);
+DEFAULT void Timer6A_ISR(void);
+DEFAULT void Timer6B_ISR(void);
+DEFAULT void Timer7A_ISR(void);
+DEFAULT void Timer7B_ISR(void);
+
+DEFAULT void UART0_ISR(void);
+DEFAULT void UART1_ISR(void);
+DEFAULT void UART2_ISR(void);
+DEFAULT void UART3_ISR(void);
+DEFAULT void UART4_ISR(void);
+DEFAULT void UART5_ISR(void);
+DEFAULT void UART6_ISR(void);
+DEFAULT void UART7_ISR(void);
+
+DEFAULT void UDMAError_ISR(void);
+DEFAULT void UDMASoftware_ISR(void);
+
+DEFAULT void USB0_ISR(void);
+
+DEFAULT void WatchDogTimer_ISR(void);
+
+// Vector Table Element
+typedef void (*ISRHandler)(void);
+union VectorTableEntry {
+    ISRHandler isr;   //all ISRs use this type
+    void* stack_top;  //pointer to top of the stack
+};
+
+// Build and mark the vector table for the linker
+__attribute__((section(".vector_table")))
+const VectorTableEntry vectors[] = {
     {.stack_top = &_stack_ptr}, // 0    Pointer to top of Stack
     Reset_Handler,              // 1    Reset handler is called when the <RESET> button is pressed
     NMI_Handler,                // 2    Non-Maskable Interrupt handler
@@ -119,8 +258,8 @@ const vector_table_t vectors[] = {
     0, // 85 Reserved
     I2C4_ISR,                   // 86
     I2C5_ISR,                   // 87
-    GPIOPortM_ISR,                  // 88
-    GPIOPortN_ISR,                  // 89
+    GPIOPortM_ISR,              // 88
+    GPIOPortN_ISR,              // 89
     0, // 90 Reserved
     Tamper_ISR,                 // 91
     GPIOPortP_ISR,              // 92
@@ -160,45 +299,6 @@ const vector_table_t vectors[] = {
     I2C9_ISR,                   // 126
     GPIOPortT_ISR,              // 127
     0, // 128 Reserved
-    0 // 129 Reserved
+    0  // 129 Reserved
 };
 
-// +-----------------------------------------------------------------------------------+
-// +                Implementations of Interrupt Service Routines                      +
-// +-----------------------------------------------------------------------------------+
-void Reset_Handler(void)
-{
-
-  int *src, *dest;
-
-  /* copying of the .data values into RAM */
-
-  src = &__etext;
-  for (dest = &__data_start__; dest < &__data_end__;)
-  {
-    *dest++ = *src++;
-  }
-
-  /* initializing .bss values to zero*/
-
-  for (dest = &__bss_start__; dest < &__bss_end__;)
-  {
-    *dest++ = 0;
-  }
-
-  /* your program's main() called */
-  main();
-}
-
-void Default_Handler(void)
-{
-  while (1)
-  {
-    //does literally nothing except infinitely loop
-  }
-}
-
-void exit() {
-  while(1) {}
-}
-/*****************************************END OF FILE*********************************************/

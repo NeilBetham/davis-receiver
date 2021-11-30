@@ -1,6 +1,6 @@
 #pragma once
 
-#include "register_helpers.h"
+#include "registers/register_helpers.h"
 
 // System Control Register Base Address
 #define SYSCTL_BASE 0x400FE000

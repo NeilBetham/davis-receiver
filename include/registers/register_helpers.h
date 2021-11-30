@@ -4,7 +4,8 @@
 
 // Basic Defines
 #define REGISTER(ADDR) (*((volatile uint32_t*)(ADDR)))
-#define PACKED __attribute__((packed))
+#define PACKED __attribute__((__packed__))
+#define ALIGNED __attribute__((aligned(4)))
 
 // Masking Helpers
 #define BIT_0  0x00000001

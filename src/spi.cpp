@@ -1,25 +1,25 @@
 #include "spi.h"
 
-#include "sysctl.h"
-#include "gpio.h"
+#include "registers/sysctl.h"
+#include "registers/gpio.h"
+#include "registers/ssi.h"
 
 uint32_t spi_init(uint8_t port) {
 	// Enable the clock gates for the SSI ports
   SYSCTL_RCGCSSI  = 0x0000000F;
 
 	// Configure the relevant GPIOs
-  PORT_B_PUR   = 0x000000FF;
-  PORT_B_AFSEL = 0x000000EF;
-  PORT_B_PCTL  = 0x00F00000;
-  PORT_B_DIR   = 0x00000010;
-  PORT_B_DATA  = 0x00000010;
+  PORT_B_AFSEL |= BIT_5;
+  PORT_B_PCTL  |= 0x00F00000;
+  PORT_B_DIR   |= BIT_4;
+  PORT_B_DATA  |= BIT_4;
 
-  PORT_E_AFSEL = 0x000000FF;
-  PORT_E_PCTL  = 0x00FF0000;
+  PORT_E_AFSEL |= BIT_4 | BIT_5;
+  PORT_E_PCTL  |= 0x00FF0000;
 
   // Enable all the GPIO outputs
-  PORT_B_DEN   = 0x000000FF;
-  PORT_E_DEN   = 0x000000FF;
+  PORT_B_DEN   |= BIT_4 | BIT_5;
+  PORT_E_DEN   |= BIT_4 | BIT_5;
 
   // Setup SPI bus
   SSI1_CR0  &= ~(0x0000FFFF);
@@ -33,12 +33,12 @@ uint32_t spi_init(uint8_t port) {
 
 uint32_t spi_transact(uint8_t port, uint32_t size, uint8_t* in_buf, uint8_t* out_buf) {
 	// Pull chip select low
-	PORT_B_DATA = 0x00000000;
+	PORT_B_DATA &= ~(BIT_4);
 
 	// Wait for the MISO line to be pulled low by the target
-  PORT_E_AFSEL = 0x00000010;
+  PORT_E_AFSEL &= ~(BIT_4);
   while((PORT_E_DATA & BIT_5)) {}
-  PORT_E_AFSEL = 0x00000030;
+  PORT_E_AFSEL |= BIT_4 | BIT_5;
 
 	// Start writing data
 	for(int i = 0; i < size; i++) {
@@ -48,7 +48,7 @@ uint32_t spi_transact(uint8_t port, uint32_t size, uint8_t* in_buf, uint8_t* out
 	}
 
   // Pull chip select high
-  PORT_B_DATA = BIT_4;
+  PORT_B_DATA |= BIT_4;
 
 	return size;
 }

@@ -1,2 +1,5 @@
 # Ignore Bazel dirs
 bazel-*
+
+# Ignore VIM swaps
+*.swp

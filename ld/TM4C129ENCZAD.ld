@@ -1,51 +1,60 @@
-MEMORY
-{
-    FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 1024K /* FLASH size 256KB */
-    RAM (rwx) : ORIGIN = 0x20000000, LENGTH = 256K/* RAM size 32KB */
-
+MEMORY {
+  /* These are specific to the TM4C129 Being used with this project */
+  FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 1024K
+  RAM (rwx) : ORIGIN = 0x20000000, LENGTH = 256K
 }
 
-SECTIONS
-{
+SECTIONS {
+  /* Stack starts at the end of RAM and works up towards the heap */
+  PROVIDE( _stack_ptr = ORIGIN(RAM) + LENGTH(RAM));
 
+  __text_start__ = .;     /* beginning of .text segment also called code memory */
 
-    /*
-     * initial stack pointer pointing to top of stack,starts from higher addresses
-     * i.e ORIGIN(RAM) + LENGTH(RAM)-1 in this case 0x20007FFF to lower addesses i.e
-     * those lesser than 0x20007FFF to 0x2000000,which is the origina address of RAM,
-     * until it comes in contact with .bss or .data in which case a buffer overflow occurs
-    */
-    PROVIDE( _stack_ptr = ORIGIN(RAM) + LENGTH(RAM));
+  /* Code and constants stored in FLASH */
+  .text : {
+    KEEP(*(.vector_table))  /* vector table */
+    *(.text*)               /* other code */
+    *(.rodata*)             /* constants go here */
+  } > FLASH
 
-    /* constants  and other code stored in FLASH */
-    .text :
-    {
-        __text = .;               /* beginning of .text segment,also called code memory */
-        KEEP(*(.vector_table)) /* vector table defined in startup.c to be included */
-        *(.text*)                   /* other code */
-        *(.rodata*)                /* constants go here */
-        __etext = .;             /* end of .text segment */
-    } > FLASH
+  /* CPP CTor and DTor code sections */
+  .preinit_array ALIGN(4) : {
+    __preinit_array_start__ = .;
+    KEEP(*(.preinit_array) )
+    __preinit_array_end__ = .;
+  } > FLASH
+  .init_array ALIGN(4) : {
+    __init_array_start__ = .;
+    KEEP(*(.init_array))
+    __init_array_end__ = .;
+  } > FLASH
+  .fini_array ALIGN(4) : {
+    __fini_array_start__ = .;
+    KEEP(*(.fini_array))
+    __fini_array_end__ = .;
+  } > FLASH
 
-    /* data, initialized variables, to be copied to RAM upon <RESET> by startup.c */
-    .data :
-    {
-        __data_start__ = .;          /* beginning of .data segment */
-        *(.data*)           /* data goes here */
-        __data_end__ = .;         /* end of .data segment */
-    } > RAM AT >FLASH   /* .data segment starts directly after the .text section in FLASH */
+  __text_end__ = .;       /* end of .text segment */
 
-    /* uninitialized data which is initialized to 0 upon <RESET> by startup.c */
-    .bss :
-    {
-        __bss_start__ = .;       /* beginning of .bss segment */
-        *(.bss*)        /* .bss content goes here */
-        *(COMMON)
-        __bss_end__ = .;      /* end of .bss segment */
-    } > RAM
+  /* Data and initialized variables to be copied to RAM when */
+  .data : {
+    __data_start__ = .;  /* beginning of .data segment */
+    *(vtable)            /* CPP vtable data */
+    *(.data*)            /* data goes here */
+    __data_end__ = .;    /* end of .data segment */
+  } > RAM AT > FLASH     /* .data segment starts directly after the .text section in FLASH */
+  __data_load__ = LOADADDR(.data); /* Don't rely on text end for load pos */
 
-    .heap :
-    {
-        end = ALIGN(4);
-    } > RAM
+  /* Uninitialized data which is initialized to 0 */
+  .bss : {
+    __bss_start__ = .;  /* beginning of .bss segment */
+    *(.bss*)            /* .bss content goes here */
+    *(COMMON)           /* common symbols */
+    __bss_end__ = .;    /* end of .bss segment */
+    *(.noinit*)
+  } > RAM
+
+  /* Place heap at end of constants and static data */
+  . = ALIGN(4);
+  end = .;
 }

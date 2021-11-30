@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#include "register_helpers.h"
+#include "registers/register_helpers.h"
 
 // CC1125 Related Defines and structs
 // Comm Header

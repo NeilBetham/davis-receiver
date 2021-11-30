@@ -1,19 +1,25 @@
 #include "cc1125.h"
 
-#include "gpio.h"
+#include "registers/gpio.h"
 #include "spi.h"
 #include "utils.h"
+#include "logging.h"
 
 #define SPI_BUFFER_SIZES 130
 
 // Hacky way to handle synchornization
 static volatile uint8_t wait = 0;
 
-// ISR Handler for PORTQ
-void GPIOPortQ_ISR(void) {
+// ISR Handlers for PORTQ
+void port_q_root_handler() {
   wait = 0;
+  PORT_Q_ICR |= BIT_0 | BIT_1 | BIT_2 | BIT_3;
 }
 
+void GPIOPortQ_ISR(void) { port_q_root_handler(); }
+void GPIOPortQ1_ISR(void) { port_q_root_handler(); }
+void GPIOPortQ2_ISR(void) { port_q_root_handler(); }
+void GPIOPortQ3_ISR(void) { port_q_root_handler(); }
 
 // Populates the header into a pre allocated data buffer returns the number of bytes used
 static uint8_t populate_header(uint8_t rw, uint8_t burst, uint16_t addr, uint8_t* buffer) {
@@ -47,13 +53,13 @@ uint8_t send_command(uint8_t strobe){
   header.burst = 0;
   header.addr = strobe;
 
-  spi_transact(0, sizeof(header), &header, &status);
+  spi_transact(0, sizeof(header), (uint8_t*)&header, (uint8_t*)&status);
 
   return status.state;
 }
 
 uint8_t write_register(uint16_t address, uint32_t count, const uint8_t* data){
-  if((count + 2) > SPI_BUFFER_SIZES) abort();  // Two bytes are potentially needed to write in the header
+  if((count + 2) > SPI_BUFFER_SIZES) reset();  // Two bytes are potentially needed to write in the header
   uint8_t write_buffer[SPI_BUFFER_SIZES];
   uint8_t read_buffer[SPI_BUFFER_SIZES];
   zero(sizeof(write_buffer), write_buffer);
@@ -70,7 +76,7 @@ uint8_t write_register(uint16_t address, uint32_t count, const uint8_t* data){
 }
 
 uint8_t read_register(uint16_t address, uint32_t count, uint8_t* data){
-  if((count + 2) > SPI_BUFFER_SIZES) abort();  // Two bytes are potentially needed to write in the header
+  if((count + 2) > SPI_BUFFER_SIZES) reset();  // Two bytes are potentially needed to write in the header
   uint8_t write_buffer[SPI_BUFFER_SIZES];
   uint8_t read_buffer[SPI_BUFFER_SIZES];
   zero(sizeof(write_buffer), write_buffer);
@@ -87,7 +93,7 @@ uint8_t read_register(uint16_t address, uint32_t count, uint8_t* data){
 }
 
 uint8_t read_fifo(uint32_t count, uint8_t* data){
-  if((count + 2) > SPI_BUFFER_SIZES) abort();  // Two bytes are potentially needed to write in the header
+  if((count + 2) > SPI_BUFFER_SIZES) reset();  // Two bytes are potentially needed to write in the header
   uint8_t write_buffer[SPI_BUFFER_SIZES];
   uint8_t read_buffer[SPI_BUFFER_SIZES];
   zero(sizeof(write_buffer), write_buffer);
@@ -109,7 +115,10 @@ uint8_t load_config(uint32_t count, const ConfigEntry* entries) {
     write_register(entry.addr, 1, &entry.value);
     uint8_t written_value = 0;
     read_register(entry.addr, 1, &written_value);
-    if(written_value != entry.value) abort();
+    if(written_value != entry.value) {
+      log_e("Error writing radio config!");
+      reset();
+    }
   }
   return 1;
 }
@@ -129,29 +138,29 @@ uint8_t convert_freq(uint32_t freq, uint8_t* freq0, uint8_t* freq1, uint8_t* fre
 
 uint8_t init_cc1125() {
   // Setup Port Q
-  PORT_Q_DIR    = 0x00000008;
-  PORT_Q_AFSEL  = 0x00000000;
-  PORT_Q_PUR    = 0x00000008;
-  PORT_Q_DATA   = 0x00000000;
+  PORT_Q_DIR    &= ~(BIT_0 | BIT_1 | BIT_2);
+  PORT_Q_DIR    |= BIT_3;
+  PORT_Q_AFSEL  &= ~(BIT_0 | BIT_1 | BIT_2 | BIT_3);
+  PORT_Q_DATA   &= ~(BIT_0 | BIT_1 | BIT_2 | BIT_3);
 
   // Configure interrupts
-  PORT_Q_IM     = 0x00000000;
-  PORT_Q_IEV    = 0x00000007;
+  PORT_Q_IM     &= ~(BIT_0 | BIT_1 | BIT_2);
+  PORT_Q_IEV    |= BIT_0 | BIT_1 | BIT_2;
 
   // Enable the GPIO output
-  PORT_Q_DEN   = 0x00000008;
+  PORT_Q_DEN    |= BIT_0 | BIT_1 | BIT_2 | BIT_3;
 
   // Pull the CC1125 out of reset
-  PORT_Q_DATA = 0x00000008;
+  PORT_Q_DATA   |= BIT_3;
 
   // Init The SPI Port
   spi_init(0);
 
   // This register config is specific to RX from a Davis Instruments ISS
   const ConfigEntry defaultSettings[] = {
-    {CC1125_IOCFG3,            0xB0},
-    {CC1125_IOCFG2,            0xB0},
-    {CC1125_IOCFG1,            0xB0},
+    {CC1125_IOCFG3,            0x30},
+    {CC1125_IOCFG2,            0x30},
+    {CC1125_IOCFG1,            0x30},
     {CC1125_IOCFG0,            0x14},
     {CC1125_SYNC1,             0xC9},
     {CC1125_SYNC0,             0x89},
@@ -198,6 +207,8 @@ uint8_t init_cc1125() {
   uint8_t load_status = load_config(sizeof(defaultSettings) / sizeof(ConfigEntry), defaultSettings);
 
   // Enable Interrupts
+  PORT_Q_IM |= BIT_0 | BIT_1 | BIT_2;
+
   return load_status;
 }
 
@@ -232,22 +243,17 @@ uint8_t start_rx(uint32_t freq) {
 }
 
 uint8_t wait_for_radio() {
-/*
   // Init the synchronization var
   wait = 1;
 
   // Enable interrupts from the radio
-  PORT_Q_IM     = 0x00000007;
+  PORT_Q_IM     |= BIT_0;
 
   // Wait for the radio to send us an interrupt
-  while(wait) {}
+  while(wait);
 
   // Disable interrupts from the radio
-  PORT_Q_IM     = 0x00000000;
-*/
-  while(get_radio_state() != 0x00) {
-    for(uint32_t index = 0; index < 100000; index++) {}
-  }
+  PORT_Q_IM     &= ~(BIT_0);
 
   return 1;
 }

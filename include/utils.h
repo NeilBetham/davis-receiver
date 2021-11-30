@@ -1,26 +1,30 @@
 #pragma once
 
-#include "core.h"
+#include "registers/core.h"
 
 // Stupid struct zeroing
-static inline void zero(uint32_t count, uint8_t* data) {
+static inline void zero(uint32_t count, void* data) {
+  uint8_t* local_data = (uint8_t*)data;
   for(uint32_t index = 0; index < count; index++) {
-    *data++ = 0;
+    *local_data++ = 0;
   }
 }
 
-static inline void copy(uint32_t count, const uint8_t* src, uint8_t* dest) {
+static inline void copy(uint32_t count, const void* src, void* dest) {
   for(uint32_t index = 0; index < count; index++) {
-    dest[index] = src[index];
+    ((uint8_t*)dest)[index] = ((uint8_t*)src)[index];
   }
 }
 
 // Causes the uC to reset
-static inline void abort() {
+static inline void reset() {
   CORE_APINT &= ~(0xFFFF0000);
   CORE_APINT |=   0x5FA00004;
 }
 
-static inline void sleep(uint32_t cycle_count) {
-  for(uint32_t index = 0; index < cycle_count; index++) {}
-}
+// Systick based sleep
+void sleep(uint32_t milliseconds);
+void sleep_int();
+
+// GPTM based sleep
+void usleep(uint32_t microseconds);
