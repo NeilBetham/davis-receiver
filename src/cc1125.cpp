@@ -145,7 +145,7 @@ uint8_t init_cc1125() {
 
   // Configure interrupts
   PORT_Q_IM     &= ~(BIT_0 | BIT_1 | BIT_2);
-  PORT_Q_IEV    |= BIT_0 | BIT_1 | BIT_2;
+  PORT_Q_IEV    &= ~(BIT_0 | BIT_1 | BIT_2);
 
   // Enable the GPIO output
   PORT_Q_DEN    |= BIT_0 | BIT_1 | BIT_2 | BIT_3;
@@ -158,10 +158,10 @@ uint8_t init_cc1125() {
 
   // This register config is specific to RX from a Davis Instruments ISS
   const ConfigEntry defaultSettings[] = {
-    {CC1125_IOCFG3,            0x30},
-    {CC1125_IOCFG2,            0x30},
+    {CC1125_IOCFG3,            0x14 | BIT_6},
+    {CC1125_IOCFG2,            0x33},
     {CC1125_IOCFG1,            0x30},
-    {CC1125_IOCFG0,            0x14},
+    {CC1125_IOCFG0,            0x33},
     {CC1125_SYNC1,             0xC9},
     {CC1125_SYNC0,             0x89},
     {CC1125_SYNC_CFG1,         0x0A},
@@ -247,13 +247,13 @@ uint8_t wait_for_radio() {
   wait = 1;
 
   // Enable interrupts from the radio
-  PORT_Q_IM     |= BIT_0;
+  PORT_Q_IM     |= BIT_2;
 
   // Wait for the radio to send us an interrupt
   while(wait);
 
   // Disable interrupts from the radio
-  PORT_Q_IM     &= ~(BIT_0);
+  PORT_Q_IM     &= ~(BIT_2);
 
   return 1;
 }
