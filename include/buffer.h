@@ -13,16 +13,23 @@ template <size_t BUFFER_SIZE>
 class Buffer {
 public:
   Buffer() { zero(); };
+
+  Buffer(const uint8_t* src, uint32_t count) {
+    uint32_t copy_count = count > BUFFER_SIZE ? BUFFER_SIZE : count;
+    memcpy(_buffer, src, copy_count);
+    _size = copy_count;
+  }
+
   Buffer(Buffer<BUFFER_SIZE> const& other) {
     memcpy(_buffer, other._buffer, BUFFER_SIZE);
     _size = other._size;
   }
+
   Buffer<BUFFER_SIZE>& operator=(Buffer<BUFFER_SIZE> const& rhs) {
     memcpy(_buffer, rhs._buffer, BUFFER_SIZE);
     _size = rhs._size;
     return *this;
   }
-
   constexpr size_t capacity() { return BUFFER_SIZE; }
   uint32_t size() { return _size; }
   uint8_t* buffer() { return _buffer; }

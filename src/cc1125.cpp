@@ -7,12 +7,14 @@
 
 #define SPI_BUFFER_SIZES 130
 
-// Hacky way to handle synchornization
-static volatile uint8_t wait = 0;
+static RadioDelegate* g_delegate = NULL;
+
+void handle_recevied_packet();
 
 // ISR Handlers for PORTQ
 void port_q_root_handler() {
-  wait = 0;
+  log_i("Radio INT");
+  handle_recevied_packet();
   PORT_Q_ICR |= BIT_0 | BIT_1 | BIT_2 | BIT_3;
 }
 
@@ -242,38 +244,39 @@ uint8_t start_rx(uint32_t freq) {
   return 1;
 }
 
-uint8_t wait_for_radio() {
-  // Init the synchronization var
-  wait = 1;
-
-  // Enable interrupts from the radio
-  PORT_Q_IM     |= BIT_2;
-
-  // Wait for the radio to send us an interrupt
-  while(wait);
-
-  // Disable interrupts from the radio
-  PORT_Q_IM     &= ~(BIT_2);
-
-  return 1;
-}
-
 uint8_t get_radio_state() {
   return send_command(CC1125_CMD_SNOP);
 }
 
-uint8_t receive_packet(uint32_t freq, uint8_t* buffer) {
-  start_rx(freq);
-  wait_for_radio();
+uint8_t rx_byte_count() {
+  uint8_t bytes_rx = 0;
+  read_register(CC1125_NUM_RXBYTES, 1, &bytes_rx);
+  return bytes_rx;
+}
 
+uint8_t receive_packet(uint8_t* buffer) {
   // Check how many bytes we recevied
-  uint8_t bytes_received = 0;
-  read_register(CC1125_NUM_RXBYTES, 1, &bytes_received);
-  if(bytes_received != 12) {
+  if(rx_byte_count() != PACKET_LENGTH) {
     return 0;
   }
 
   // Read the FIFO and return
-  read_fifo(12, buffer);
+  read_fifo(PACKET_LENGTH, buffer);
   return 1;
+}
+
+void handle_recevied_packet() {
+  uint8_t buffer[PACKET_LENGTH] = {0};
+  uint8_t ret = receive_packet(buffer);
+  if(ret != 1) {
+    return;
+  }
+
+  if(g_delegate != NULL) {
+    g_delegate->handle_packet(buffer, PACKET_LENGTH);
+  }
+}
+
+void register_delegate(RadioDelegate* delegate) {
+  g_delegate = delegate;
 }
