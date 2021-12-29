@@ -187,8 +187,10 @@ uint8_t init_cc1125() {
     {CC1125_FS_CFG,            0x12},
     {CC1125_PKT_CFG1,          0x03},
     {CC1125_PKT_CFG0,          0x00},
+    {CC1125_RFEND_CFG1,        0x0F},
+    {CC1125_RFEND_CFG0,        0x08},
     {CC1125_PA_CFG0,           0x7D},
-    {CC1125_PKT_LEN,           0x0A},
+    {CC1125_PKT_LEN,           0x08},
     {CC1125_IF_MIX_CFG,        0x00},
     {CC1125_FREQOFF_CFG,       0x24},
     {CC1125_IF_ADC0,           0x05},
@@ -262,7 +264,7 @@ uint8_t receive_packet(uint8_t* buffer, uint32_t length) {
 
 void handle_received_packet() {
   uint32_t packet_length = rx_byte_count();
-  if(packet_length > 30) { return; }
+  if(packet_length > 30 || packet_length < 1) { return; }
   uint8_t buffer[30] = {0};
   uint8_t ret = receive_packet(buffer, packet_length);
   if(ret != 1) {

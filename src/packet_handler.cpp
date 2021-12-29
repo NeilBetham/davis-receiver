@@ -16,13 +16,14 @@ void PacketHandler::handle_packet(uint8_t* buffer, uint32_t length) {
   // TODO - CRC Check
 
   // Pull out RSSI and LQI values from last two bytes
-  int8_t rssi = (int8_t)buffer[10];
-  uint8_t lqi = buffer[11] & 0x7F;
+  int8_t rssi = (int8_t)buffer[length - 2];
+  uint8_t lqi = buffer[length - 1] & 0x7F;
+  uint8_t crc_ok = (buffer[length - 1] & 0x80) > 0;
 
   // Build the packet struct
   ReceivedPacket packet;
   packet.frequency = _hop_controller.current_hop();
-  packet.valid = true;
+  packet.valid = crc_ok;
   packet.rssi = rssi;
   packet.lqi = lqi;
   memcpy(&packet.data, buffer, 8);
@@ -33,7 +34,9 @@ void PacketHandler::handle_packet(uint8_t* buffer, uint32_t length) {
   packet.wind_dir = ((((uint16_t)buffer[2]) * 360) / 255);
 
   // Check that we recevied a valid packet
-  if(!packet.valid || packet.lqi == 0) {
+  if(!packet.valid) {
+    start_rx(_hop_controller.current_hop());
+    log_i("Packet Invalid");
     return;
   }
 
