@@ -13,12 +13,13 @@ void PacketHandler::handle_packet(uint8_t* buffer, uint32_t length) {
   // Check that the length is correct. This _should_ always be true
   log_i("RX Packet Len: {}", length);
 
-  // TODO - CRC Check
+  // CRC Check
+  uint16_t crc = _crc.compute(buffer, length - 2);
 
   // Pull out RSSI and LQI values from last two bytes
   int8_t rssi = (int8_t)buffer[length - 2];
   uint8_t lqi = buffer[length - 1] & 0x7F;
-  uint8_t crc_ok = (buffer[length - 1] & 0x80) > 0;
+  uint8_t crc_ok = crc == 0;
 
   // Build the packet struct
   ReceivedPacket packet;
@@ -36,7 +37,7 @@ void PacketHandler::handle_packet(uint8_t* buffer, uint32_t length) {
   // Check that we recevied a valid packet
   if(!packet.valid) {
     start_rx(_hop_controller.current_hop());
-    log_i("Packet Invalid");
+    log_i("Packet Invalid - CRC: {:04X}", crc);
     return;
   }
 

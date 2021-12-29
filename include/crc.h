@@ -8,10 +8,11 @@
 
 class CRC {
 public:
-  CRC(uint16_t init, uint16_t polynomial, uint16_t residue);
+  CRC(uint16_t polynomial);
 
-  uint16_t checksum(uint8_t* buffer, uint32_t length);
+  uint16_t compute(uint8_t* buffer, uint32_t length);
 
 private:
-  uint16_t _table[256];
+  uint16_t _table[256] = {0};
+  uint16_t _polynomial = 0;
 };

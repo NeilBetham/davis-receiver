@@ -8,6 +8,7 @@
 
 #include "cc1125.h"
 #include "circular_buffer.h"
+#include "crc.h"
 #include "hop_controller.h"
 
 // TODO - Move data into templated buffer for more well defined access
@@ -26,6 +27,8 @@ struct ReceivedPacket {
 
 class PacketHandler : public RadioDelegate {
 public:
+  PacketHandler() : _crc(0x1021) {};
+
   void init();
   void handle_packet(uint8_t* buffer, uint32_t length);
 
@@ -33,6 +36,7 @@ public:
 	ReceivedPacket get_packet();
 
 private:
+  CRC _crc;
   CircularBuffer<ReceivedPacket, 10> _packet_buffer;
   HopController _hop_controller;
 };
