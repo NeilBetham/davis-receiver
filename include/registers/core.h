@@ -5,6 +5,7 @@
 // Interrupt Enable / Disable
 #define GIE() __asm__("CPSIE i");
 #define GID() __asm__("CPSID i");
+#define WFI() __asm__("WFI");
 
 // Core Register Base
 #define CORE_BASE 0xE000E000

@@ -9,12 +9,12 @@
 
 static RadioDelegate* g_delegate = NULL;
 
-void handle_recevied_packet();
+void handle_received_packet();
 
 // ISR Handlers for PORTQ
 void port_q_root_handler() {
-  log_i("Radio INT");
-  handle_recevied_packet();
+  log_d("CC1125 INT");
+  handle_received_packet();
   PORT_Q_ICR |= BIT_0 | BIT_1 | BIT_2 | BIT_3;
 }
 
@@ -254,26 +254,23 @@ uint8_t rx_byte_count() {
   return bytes_rx;
 }
 
-uint8_t receive_packet(uint8_t* buffer) {
-  // Check how many bytes we recevied
-  if(rx_byte_count() != PACKET_LENGTH) {
-    return 0;
-  }
-
+uint8_t receive_packet(uint8_t* buffer, uint32_t length) {
   // Read the FIFO and return
-  read_fifo(PACKET_LENGTH, buffer);
+  read_fifo(length, buffer);
   return 1;
 }
 
-void handle_recevied_packet() {
-  uint8_t buffer[PACKET_LENGTH] = {0};
-  uint8_t ret = receive_packet(buffer);
+void handle_received_packet() {
+  uint32_t packet_length = rx_byte_count();
+  if(packet_length > 30) { return; }
+  uint8_t buffer[30] = {0};
+  uint8_t ret = receive_packet(buffer, packet_length);
   if(ret != 1) {
     return;
   }
 
   if(g_delegate != NULL) {
-    g_delegate->handle_packet(buffer, PACKET_LENGTH);
+    g_delegate->handle_packet(buffer, packet_length);
   }
 }
 
