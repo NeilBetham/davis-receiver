@@ -9,7 +9,7 @@
 
 #include <stdint.h>
 
-#define PACKET_RX_DWELL_TIME_MS 4000
+#define PACKET_RX_DWELL_TIME_MS 3000
 
 class RadioController : public TimerDelegate {
 public:
