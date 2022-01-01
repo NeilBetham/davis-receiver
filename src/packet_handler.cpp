@@ -6,7 +6,7 @@
 #include <string.h>
 
 void PacketHandler::init() {
-  start_rx(_hop_controller.current_hop());
+  _radio_controller.init();
 }
 
 void PacketHandler::handle_packet(uint8_t* buffer, uint32_t length) {
@@ -23,7 +23,7 @@ void PacketHandler::handle_packet(uint8_t* buffer, uint32_t length) {
 
   // Build the packet struct
   ReceivedPacket packet;
-  packet.frequency = _hop_controller.current_hop();
+  packet.frequency = _radio_controller.current_hop();
   packet.valid = crc_ok;
   packet.rssi = rssi;
   packet.lqi = lqi;
@@ -34,21 +34,18 @@ void PacketHandler::handle_packet(uint8_t* buffer, uint32_t length) {
   packet.wind_speed = buffer[1];
   packet.wind_dir = ((((uint16_t)buffer[2]) * 360) / 255);
 
-  // Check that we recevied a valid packet
   if(!packet.valid) {
-    start_rx(_hop_controller.current_hop());
+    _radio_controller.bad_packet_rx();
     log_i("Packet Invalid - CRC: {:04X}", crc);
     return;
+  } else {
+    _radio_controller.good_packet_rx();
   }
 
   // Push the packet if we have space
   if(_packet_buffer.can_push()) {
     _packet_buffer.push(packet);
   }
-
-  // If we received a valid packet it is time to hop
-  log_i("Hopping to: {}", _hop_controller.next_hop());
-  start_rx(_hop_controller.hop());
 }
 
 bool PacketHandler::packet_waiting() {

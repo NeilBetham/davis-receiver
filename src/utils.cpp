@@ -1,7 +1,7 @@
 #include "utils.h"
 
 #include "logging.h"
-#include "timing.h"
+#include "sys_tick.h"
 #include "registers/sysctl.h"
 #include "registers/timers.h"
 

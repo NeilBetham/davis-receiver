@@ -2,8 +2,8 @@ load("@bazel_arm_none//:utils.bzl", "gdb_bin")
 
 cc_library(
   name = "sys-timing",
-  hdrs = ["include/timing.h", "include/registers/core.h", "include/registers/register_helpers.h"],
-  srcs = ["src/timing.cpp"],
+  hdrs = ["include/sys_tick.h", "include/registers/core.h", "include/registers/register_helpers.h"],
+  srcs = ["src/sys_tick.cpp"],
   strip_include_prefix = "include",
   copts = [
     "-ggdb",

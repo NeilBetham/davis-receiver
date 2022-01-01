@@ -9,9 +9,9 @@
 #include "cc1125.h"
 #include "circular_buffer.h"
 #include "crc.h"
-#include "hop_controller.h"
+#include "radio_controller.h"
 
-// TODO - Move data into templated buffer for more well defined access
+// TODO - Manage memory better
 struct ReceivedPacket {
   uint32_t frequency;
   bool valid;
@@ -38,5 +38,5 @@ public:
 private:
   CRC _crc;
   CircularBuffer<ReceivedPacket, 10> _packet_buffer;
-  HopController _hop_controller;
+  RadioController _radio_controller;
 };

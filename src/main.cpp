@@ -8,9 +8,10 @@
 #include "cc1125.h"
 #include "utils.h"
 #include "status_led.h"
-#include "timing.h"
+#include "sys_tick.h"
 #include "circular_buffer.h"
 #include "packet_handler.h"
+#include "timer.h"
 
 #include "lwip/dhcp.h"
 
@@ -129,8 +130,11 @@ int main(void){
     // See if the ethernet driver has shit to do
     enet_driver.tick();
 
+    // See if systick has things it needs to do
+    systick_run();
+
     // Pet the WDT
     //WDT0_ICR = 1;
-    WFI();
+    WFE();
   }
 }

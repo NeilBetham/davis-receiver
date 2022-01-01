@@ -6,7 +6,7 @@
 
 #include "uart.h"
 
-#include "timing.h"
+#include "sys_tick.h"
 
 #define FMT_HEADER_ONLY
 #include <fmt/core.h>
