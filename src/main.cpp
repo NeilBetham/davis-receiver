@@ -82,7 +82,7 @@ int main(void){
   uart1.init();
 
   logging_init(&uart1);
-  logging_set_log_level(LogLevel::debug);
+  logging_set_log_level(LogLevel::info);
   log_i("Hello World!");
 
   enet_driver.init();
@@ -112,15 +112,20 @@ int main(void){
 
   // Start receiving packets
   while(1) {
-    if(packet_handler.packet_waiting()){
-      auto packet = packet_handler.get_packet();
-      log_i("Main: Packet RX, RSSI - {}, LQI - {}, Station - {}, Sensor - {}, WindSpeed - {}, WindDir - {}",
-        packet.rssi,
-        packet.lqi,
-        packet.station_id,
-        packet.sensor_id,
-        packet.wind_speed,
-        packet.wind_dir
+    if(packet_handler.reading_waiting()){
+      auto reading = packet_handler.get_reading();
+      log_i("Davis ISS, RSSI - {}, LQI - {}, Station - {}, Sensor - {}, Data [{:02X}, {:02X}, {:02X}], WindSpeed - {}, WindDir - {}, Name - {}, Value - {}",
+        reading.packet.rssi,
+        reading.packet.lqi,
+        reading.packet.station_id,
+        reading.packet.sensor_id,
+        reading.packet.data[0],
+        reading.packet.data[1],
+        reading.packet.data[2],
+        reading.wind_speed,
+        reading.wind_dir,
+        reading_type_string(reading.type),
+        reading.value
       );
       set_status_led(0, 1, 0);
       sleep(500);

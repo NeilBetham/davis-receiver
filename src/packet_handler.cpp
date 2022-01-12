@@ -11,7 +11,7 @@ void PacketHandler::init() {
 
 void PacketHandler::handle_packet(uint8_t* buffer, uint32_t length) {
   // Check that the length is correct. This _should_ always be true
-  log_i("RX Packet Len: {}", length);
+  log_d("RX Packet Len: {}", length);
 
   // CRC Check
   uint16_t crc = _crc.compute(buffer, length - 2);
@@ -31,8 +31,6 @@ void PacketHandler::handle_packet(uint8_t* buffer, uint32_t length) {
   packet.length = 8;
   packet.station_id = (buffer[0] & 0x07) + 1;
   packet.sensor_id = (buffer[0] & 0xF0) >> 4;
-  packet.wind_speed = buffer[1];
-  packet.wind_dir = ((((uint16_t)buffer[2]) * 360) / 255);
 
   if(!packet.valid) {
     _radio_controller.bad_packet_rx();
@@ -42,16 +40,17 @@ void PacketHandler::handle_packet(uint8_t* buffer, uint32_t length) {
     _radio_controller.good_packet_rx();
   }
 
-  // Push the packet if we have space
-  if(_packet_buffer.can_push()) {
-    _packet_buffer.push(packet);
+  // If we have space parse the packet
+  if(_reading_buffer.can_push()) {
+    auto reading = parse_packet(packet);
+    _reading_buffer.push(reading);
   }
 }
 
-bool PacketHandler::packet_waiting() {
-  return _packet_buffer.can_pop();
+bool PacketHandler::reading_waiting() {
+  return _reading_buffer.can_pop();
 }
 
-ReceivedPacket PacketHandler::get_packet() {
-  return _packet_buffer.pop();
+Reading PacketHandler::get_reading() {
+  return _reading_buffer.pop();
 }

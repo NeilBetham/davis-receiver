@@ -10,20 +10,8 @@
 #include "circular_buffer.h"
 #include "crc.h"
 #include "radio_controller.h"
-
-// TODO - Manage memory better
-struct ReceivedPacket {
-  uint32_t frequency;
-  bool valid;
-  int8_t rssi;
-  uint8_t lqi;
-  uint8_t station_id;
-  uint8_t sensor_id;
-  uint8_t wind_speed;
-  uint16_t wind_dir;
-  uint8_t data[8];
-  uint8_t length;
-};
+#include "received_packet.h"
+#include "packet_parser.h"
 
 class PacketHandler : public RadioDelegate {
 public:
@@ -32,11 +20,11 @@ public:
   void init();
   void handle_packet(uint8_t* buffer, uint32_t length);
 
-	bool packet_waiting();
-	ReceivedPacket get_packet();
+	bool reading_waiting();
+	Reading get_reading();
 
 private:
   CRC _crc;
-  CircularBuffer<ReceivedPacket, 10> _packet_buffer;
+  CircularBuffer<Reading, 10> _reading_buffer;
   RadioController _radio_controller;
 };
