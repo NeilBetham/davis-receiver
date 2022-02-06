@@ -13,9 +13,14 @@
 #include "packet_handler.h"
 #include "timer.h"
 
+#include "socket_delegate.h"
+#include "socket.h"
+
 #include "lwip/dhcp.h"
 
 #include <stdlib.h>
+
+#include <mbedtls/platform.h>
 
 ethernet::Driver<1550, 10> enet_driver;
 UART uart1(UART1_BASE, 115200);
@@ -25,6 +30,23 @@ void EthernetMac_ISR(void) {
   enet_driver.interrupt_handler();
   sleep_int();
 }
+
+class TestSockDel : public SocketDelegate {
+public:
+
+  void handle_rx(Socket* conn, std::string& data) {
+    log_i("Resp: `{}`", data);
+  }
+  void handle_closed(Socket* conn){}
+
+  void handle_tx(Socket* conn) {
+    std::string req = "GET / HTTP/1.1\r\nHost: 10.0.1.1\r\n\r\n";
+    log_i("Req: `{}`", req);
+    conn->write((uint8_t*)req.data(), req.size());
+    conn->flush();
+  }
+};
+
 
 int main(void){
   uint32_t reset_reason = SYSCTL_RESC;
@@ -110,6 +132,10 @@ int main(void){
 
   packet_handler.init();
 
+  TestSockDel tsd;
+  Socket test_socket;
+  test_socket.set_delegate(&tsd);
+
   // Start receiving packets
   while(1) {
     if(packet_handler.reading_waiting()){
@@ -119,9 +145,9 @@ int main(void){
         reading.packet.lqi,
         reading.packet.station_id,
         reading.packet.sensor_id,
-        reading.packet.data[0],
-        reading.packet.data[1],
-        reading.packet.data[2],
+        reading.raw_data[0],
+        reading.raw_data[1],
+        reading.raw_data[2],
         reading.wind_speed,
         reading.wind_dir,
         reading_type_string(reading.type),
@@ -130,6 +156,11 @@ int main(void){
       set_status_led(0, 1, 0);
       sleep(500);
       set_status_led(0, 0, 0);
+    }
+
+    // Try connecting to the target host
+    if(!test_socket.is_connected()) {
+      test_socket.connect("cmo.hotdam.org", 80);
     }
 
     // See if the ethernet driver has shit to do

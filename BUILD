@@ -30,6 +30,7 @@ cc_library(
     ":sys-timing",
     "@fmt//:fmt",
     "@picohttp//:picohttp",
+    "@mbedtls//:mbedtls-lib",
   ],
   copts = [
     "-ggdb",

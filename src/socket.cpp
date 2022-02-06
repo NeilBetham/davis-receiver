@@ -2,6 +2,8 @@
 
 #include "logging.h"
 
+#include <lwip/dns.h>
+#include <lwip/ip4_addr.h>
 #include <string>
 #include <string.h>
 
@@ -61,6 +63,18 @@ err_t tcp_tx(void* arg, struct tcp_pcb* conn, uint16_t len) {
 }
 
 
+template <typename T>
+err_t tcp_connected(void* arg, struct tcp_pcb* conn, err_t err) {
+  ((T*)(arg))->connected(err);
+  return ERR_OK;
+}
+
+template <typename T>
+void dns_query_complete(const char* name, const ip_addr_t* ip_addr, void* cb_arg) {
+  ((T*)(cb_arg))->query_complete(name, ip_addr);
+}
+
+
 } // namespace
 
 
@@ -86,6 +100,53 @@ bool Socket::listen(uint32_t port) {
   }
 
   tcp_accept(_tcp_handle, tcp_acc<Socket>);
+
+  return true;
+}
+
+bool Socket::connect(uint32_t ip, uint32_t port) {
+  _mode = SocketMode::connection;
+  _state = SocketState::disconnected;
+  _port = port;
+
+  // Open the connection
+  log_d("Opening connection to: {}:{}", ip, port);
+  _tcp_handle = tcp_new();
+  if(_tcp_handle == NULL) { log_w("Failed to open connnection to: {}:{}", ip, port); return false; }
+  tcp_arg(_tcp_handle, this);
+  tcp_recv(_tcp_handle, tcp_rx<Socket>);
+  tcp_sent(_tcp_handle, tcp_tx<Socket>);
+  tcp_err(_tcp_handle, tcp_err<Socket>);
+
+  ip4_addr_set_u32(&_ip_address, ip);
+  if(tcp_connect(_tcp_handle, &_ip_address, (uint16_t)_port, tcp_connected<Socket>) != ERR_OK) {
+    log_w("Failed to open connnection to: {}:{}", ip, port);
+    return false;
+  }
+
+  _state = SocketState::connecting;
+  return true;
+}
+
+bool Socket::connect(const std::string& hostname, uint32_t port) {
+  _mode = SocketMode::connection;
+  _state = SocketState::disconnected;
+  _port = port;
+
+  // First do a DNS query to find the target IP
+  err_t dns_error = dns_gethostbyname_addrtype(hostname.c_str(), &_ip_address, dns_query_complete<Socket>, this, LWIP_DNS_ADDRTYPE_IPV4);
+
+  // Check the return for how the name was resolved
+  if(dns_error == ERR_OK) {
+    // DNS result was cached and _address_ is valid.
+    connect(ip4_addr_get_u32(&_ip_address), _port);
+  } else if(dns_error == ERR_INPROGRESS){
+    // We need to wait for the callback
+    _state = SocketState::connecting;
+  } else {
+    error(dns_error);
+    return false;
+  }
 
   return true;
 }
@@ -126,15 +187,27 @@ void Socket::error(err_t error) {
   _delegate->handle_closed(this);
 }
 
-Socket::Socket(struct tcp_pcb* conn, uint32_t port) {
-  _port = port;
-  _tcp_handle = conn;
-  _mode = SocketMode::connection;
-  _state = SocketState::connected;
-  tcp_arg(conn, this);
-  tcp_recv(conn, tcp_rx<Socket>);
-  tcp_sent(conn, tcp_tx<Socket>);
-  tcp_err(conn, tcp_err<Socket>);
+void Socket::connected(err_t error) {
+  if(error == ERR_OK){
+    log_d("Socket connected");
+    _state = SocketState::connected;
+  } else {
+    log_w("Socket failed to connect");
+    _state = SocketState::disconnected;
+  }
+  if(_delegate != NULL) {
+    _delegate->handle_tx(this);
+  }
+}
+
+void Socket::query_complete(const char* name, const ip_addr_t* ip_addr) {
+  if(ip_addr != NULL) {
+    log_d("DNS Query Complete: `{}` -> {}", name, ip4_addr_get_u32(ip_addr));
+    connect(ip4_addr_get_u32(ip_addr), _port);
+  } else {
+    log_w("DNS query for `{}` failed", name);
+    error(0);
+  }
 }
 
 void Socket::close() {
@@ -149,4 +222,15 @@ void Socket::close() {
 
 void Socket::flush() {
   tcp_output(_tcp_handle);
+}
+
+Socket::Socket(struct tcp_pcb* conn, uint32_t port) {
+  _port = port;
+  _tcp_handle = conn;
+  _mode = SocketMode::connection;
+  _state = SocketState::connected;
+  tcp_arg(conn, this);
+  tcp_recv(conn, tcp_rx<Socket>);
+  tcp_sent(conn, tcp_tx<Socket>);
+  tcp_err(conn, tcp_err<Socket>);
 }

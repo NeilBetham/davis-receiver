@@ -15,5 +15,7 @@ public:
 
   virtual void handle_rx(Socket* conn, std::string& data) = 0;
   virtual void handle_closed(Socket* conn) = 0;
-  virtual void handle_accept(Socket* conn) = 0;
+
+  virtual void handle_accept(Socket* conn) {};
+  virtual void handle_tx(Socket* conn) {};
 };

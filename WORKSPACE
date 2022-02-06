@@ -49,3 +49,12 @@ http_archive(
   build_file = "@//deps/picohttp:picohttp.BUILD",
 )
 
+# mbedtls for https
+http_archive(
+  name = "mbedtls",
+  url = "https://github.com/ARMmbed/mbedtls/archive/6249603e7c23aa15327ae740d1b8f66c32d3204d.tar.gz",
+  sha256 = "6c26a5db0bdc41b7d12d749c66268136b6eceb79d81de5a62abebeebf554e470",
+  strip_prefix = "mbedtls-6249603e7c23aa15327ae740d1b8f66c32d3204d",
+  build_file = "@//deps/mbedtls:mbedtls.BUILD",
+)
+

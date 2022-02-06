@@ -206,6 +206,10 @@ err_t Driver<BUF_SIZE, BUF_COUNT>::netif_init(struct netif* netif) {
 
 template <uint32_t BUF_SIZE, uint32_t BUF_COUNT>
 void Driver<BUF_SIZE, BUF_COUNT>::netif_status_cb(struct netif* netif) {
+  uint8_t ip_bytes[4] = {0};
+  *((uint32_t*)ip_bytes) = netif_ip4_addr(netif)->addr;
+  log_i("Netif: IP Address - {}.{}.{}.{}", ip_bytes[0], ip_bytes[1], ip_bytes[2], ip_bytes[3]);
+
 }
 
 template <uint32_t BUF_SIZE, uint32_t BUF_COUNT>
