@@ -2,6 +2,8 @@
 
 #include "logging.h"
 
+#include "mbedtls/debug.h"
+
 namespace {
 
 
@@ -23,6 +25,12 @@ int shitty_entropy_source(void* data, uint8_t* output, size_t len, size_t* out_l
   }
   *out_len = len;
   return 0;
+}
+
+void mbed_debug(void *ctx, int level, const char* file, int line, const char* str) {\
+  uint32_t len = strlen(str);
+  ((char*)str)[len - 1] = 0; // TODO: =P
+  log_d("MBEDTLS [{}]-{}:{} - {}", level, file, line, str);
 }
 
 
@@ -57,9 +65,11 @@ TLSSocket::TLSSocket(Socket& socket) : _socket(socket) {
     return;
   }
 
-  mbedtls_ssl_conf_authmode(&_conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
+  mbedtls_ssl_conf_authmode(&_conf, MBEDTLS_SSL_VERIFY_NONE);
   mbedtls_ssl_conf_ca_chain(&_conf, &_cacert, NULL);
   mbedtls_ssl_conf_rng(&_conf, mbedtls_ctr_drbg_random, &_ctr_drbg);
+  mbedtls_ssl_conf_dbg(&_conf, mbed_debug, NULL);
+  mbedtls_debug_set_threshold(4);
 
   // Configure the ssl instance
   ret = mbedtls_ssl_setup(&_ssl, &_conf);
