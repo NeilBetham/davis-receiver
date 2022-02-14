@@ -12,6 +12,7 @@
 #include "circular_buffer.h"
 #include "packet_handler.h"
 #include "timer.h"
+#include "tls_socket.h"
 
 #include "socket_delegate.h"
 #include "socket.h"
@@ -104,7 +105,7 @@ int main(void){
   uart1.init();
 
   logging_init(&uart1);
-  logging_set_log_level(LogLevel::info);
+  logging_set_log_level(LogLevel::debug);
   log_i("Hello World!");
 
   enet_driver.init();
@@ -134,7 +135,8 @@ int main(void){
 
   TestSockDel tsd;
   Socket test_socket;
-  test_socket.set_delegate(&tsd);
+  TLSSocket secure_socket(test_socket);
+  secure_socket.set_delegate(&tsd);
 
   // Start receiving packets
   while(1) {
@@ -160,7 +162,7 @@ int main(void){
 
     // Try connecting to the target host
     if(!test_socket.is_connected()) {
-      test_socket.connect("cmo.hotdam.org", 80);
+      test_socket.connect("nimbus.cmo.hotdam.org", 443);
     }
 
     // See if the ethernet driver has shit to do

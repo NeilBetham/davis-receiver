@@ -34,8 +34,8 @@ err_t tcp_rx(void* arg, struct tcp_pcb* conn, struct pbuf* data, err_t error) {
 
   auto buffered_data = to_string(data);
   pbuf_free(data);
-  ((T*)(arg))->read(buffered_data);
   log_d("Socket RX: {}", buffered_data.size());
+  ((T*)(arg))->read(buffered_data);
   return ERR_OK;
 }
 
@@ -181,10 +181,13 @@ void Socket::accept(struct tcp_pcb* conn) {
 }
 
 void Socket::error(err_t error) {
-  _tcp_handle = NULL;  /// @note LWIP will have deleted this handle already for us on error state
-  _state = SocketState::disconnected;
-  if(_delegate == NULL) { return; }
-  _delegate->handle_closed(this);
+  if(_state == SocketState::connecting || _state == SocketState::connected) {
+    log_e("LWIP Socket Error: {}", error);
+    _tcp_handle = NULL;  /// @note LWIP will have deleted this handle already for us on error state
+    _state = SocketState::disconnected;
+    if(_delegate == NULL) { return; }
+    _delegate->handle_closed(this);
+  }
 }
 
 void Socket::connected(err_t error) {
@@ -197,6 +200,8 @@ void Socket::connected(err_t error) {
   }
   if(_delegate != NULL) {
     _delegate->handle_tx(this);
+  } else {
+    log_w("Socket delegate is NULL");
   }
 }
 
