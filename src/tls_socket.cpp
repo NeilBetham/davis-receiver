@@ -29,7 +29,7 @@ int shitty_entropy_source(void* data, uint8_t* output, size_t len, size_t* out_l
 
 void mbed_debug(void *ctx, int level, const char* file, int line, const char* str) {\
   uint32_t len = strlen(str);
-  ((char*)str)[len - 1] = 0; // TODO: =P
+  ((char*)str)[len - 1] = 0; // TODO: =P This removes the newline on the mbed dbg msgs
   log_d("MBEDTLS [{}]-{}:{} - {}", level, file, line, str);
 }
 
@@ -69,7 +69,7 @@ TLSSocket::TLSSocket(Socket& socket) : _socket(socket) {
   mbedtls_ssl_conf_ca_chain(&_conf, &_cacert, NULL);
   mbedtls_ssl_conf_rng(&_conf, mbedtls_ctr_drbg_random, &_ctr_drbg);
   mbedtls_ssl_conf_dbg(&_conf, mbed_debug, NULL);
-  mbedtls_debug_set_threshold(4);
+  mbedtls_debug_set_threshold(1);
 
   // Configure the ssl instance
   ret = mbedtls_ssl_setup(&_ssl, &_conf);

@@ -1,6 +1,7 @@
 #include "socket.h"
 
 #include "logging.h"
+#include "ethernet/driver.h"
 
 #include <lwip/dns.h>
 #include <lwip/ip4_addr.h>
@@ -74,6 +75,11 @@ void dns_query_complete(const char* name, const ip_addr_t* ip_addr, void* cb_arg
   ((T*)(cb_arg))->query_complete(name, ip_addr);
 }
 
+err_t tcp_sent_cb(void* arg, struct tcp_pcb* conn, uint16_t sent_size) {
+  log_d("Remote ack: {}", sent_size);
+  return ERR_OK;
+}
+
 
 } // namespace
 
@@ -110,17 +116,20 @@ bool Socket::connect(uint32_t ip, uint32_t port) {
   _port = port;
 
   // Open the connection
-  log_d("Opening connection to: {}:{}", ip, port);
+  log_d("Opening connection to: {:0X}:{}", ip, port);
   _tcp_handle = tcp_new();
-  if(_tcp_handle == NULL) { log_w("Failed to open connnection to: {}:{}", ip, port); return false; }
+  if(_tcp_handle == NULL) { /*log_w("Failed to create connection instance for: {:0X}:{}", ip, port);*/ return false; }
   tcp_arg(_tcp_handle, this);
   tcp_recv(_tcp_handle, tcp_rx<Socket>);
   tcp_sent(_tcp_handle, tcp_tx<Socket>);
   tcp_err(_tcp_handle, tcp_err<Socket>);
+  tcp_sent(_tcp_handle, tcp_sent_cb);
 
   ip4_addr_set_u32(&_ip_address, ip);
   if(tcp_connect(_tcp_handle, &_ip_address, (uint16_t)_port, tcp_connected<Socket>) != ERR_OK) {
-    log_w("Failed to open connnection to: {}:{}", ip, port);
+    log_w("Failed to open connnection to: {:0X}:{}", ip, port);
+    tcp_close(_tcp_handle);
+    _tcp_handle = NULL;
     return false;
   }
 
@@ -157,6 +166,7 @@ void Socket::shutdown() {
 
 void Socket::read(std::string& data) {
   if(_delegate == NULL) { return; }
+  flush();
   _delegate->handle_rx(this, data);
 }
 
@@ -226,6 +236,7 @@ void Socket::close() {
 }
 
 void Socket::flush() {
+  log_d("Flushing socket");
   tcp_output(_tcp_handle);
 }
 

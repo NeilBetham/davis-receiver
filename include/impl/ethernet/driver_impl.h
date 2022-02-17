@@ -209,7 +209,9 @@ void Driver<BUF_SIZE, BUF_COUNT>::netif_status_cb(struct netif* netif) {
   uint8_t ip_bytes[4] = {0};
   *((uint32_t*)ip_bytes) = netif_ip4_addr(netif)->addr;
   log_i("Netif: IP Address - {}.{}.{}.{}", ip_bytes[0], ip_bytes[1], ip_bytes[2], ip_bytes[3]);
-
+  if(ip_bytes[0] != 0 || ip_bytes[1] != 0 || ip_bytes[2] != 0 || ip_bytes[3] != 0) {
+    _dhcp_ip_acq = true;
+  }
 }
 
 template <uint32_t BUF_SIZE, uint32_t BUF_COUNT>
@@ -220,8 +222,8 @@ err_t Driver<BUF_SIZE, BUF_COUNT>::netif_output(struct netif* netif, struct pbuf
   uint32_t bytes_copied = 0;
 
   while(buf_ptr != NULL) {
-    memcpy(buf.buffer(), packet->payload, packet->len);
-    bytes_copied += packet->len;
+    memcpy(buf.buffer() + bytes_copied, buf_ptr->payload, buf_ptr->len);
+    bytes_copied += buf_ptr->len;
     buf_ptr = buf_ptr->next;
   }
 

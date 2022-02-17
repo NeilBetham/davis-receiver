@@ -86,7 +86,7 @@
 
 /* MEM_SIZE: the size of the heap memory. If the application will send
  * a lot of data that needs to be copied, this should be set high. */
-#define MEM_SIZE               10240
+#define MEM_SIZE               (20 * 1024)
 
 /* MEMP_NUM_PBUF: the number of memp struct pbufs. If the application
  *    sends a lot of data out of ROM (or other static memory), this
@@ -154,10 +154,10 @@
 #define TCP_QUEUE_OOSEQ         1
 
 /* TCP Maximum segment size. */
-#define TCP_MSS                 1024
+#define TCP_MSS                 1460
 
 /* TCP sender buffer space (bytes). */
-#define TCP_SND_BUF             2048
+#define TCP_SND_BUF             2920
 
 /* TCP sender buffer space (pbufs). This must be at least = 2 *
  *    TCP_SND_BUF/TCP_MSS for things to work. */

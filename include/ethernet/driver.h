@@ -32,6 +32,8 @@ public:
   void start_tx();
   void stop_tx();
 
+  bool ip_valid() { return _dhcp_ip_acq; };
+
   // These are hooks for the runtime
   void interrupt_handler();
   void tick();
@@ -62,6 +64,7 @@ private:
   CircularBuffer<Buffer<BUF_SIZE>, BUF_COUNT> _tx_queue;
 
   LinkState _curr_link_state = LinkState::unknown;
+  bool _dhcp_ip_acq = false;
 };
 
 

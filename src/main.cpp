@@ -18,6 +18,7 @@
 #include "socket.h"
 
 #include "lwip/dhcp.h"
+#include "lwip/ip4_addr.h"
 
 #include <stdlib.h>
 
@@ -161,11 +162,13 @@ int main(void){
     }
 
     // Try connecting to the target host
-    if(!test_socket.is_connected()) {
-      test_socket.connect("nimbus.cmo.hotdam.org", 443);
+    if(enet_driver.ip_valid() && !test_socket.is_connected()) {
+      //test_socket.connect("nimbus.cmo.hotdam.org", 443);
+      test_socket.connect(0xD704000A, 4333);
     }
 
     // See if the ethernet driver has shit to do
+    enet_driver.tick();
     enet_driver.tick();
 
     // See if systick has things it needs to do
