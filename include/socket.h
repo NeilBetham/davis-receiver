@@ -26,7 +26,7 @@ enum class SocketState {
 };
 
 // TODO: This should be broken into subclasses for outgoing / incomming / listen
-class Socket {
+class Socket : public ISocket {
 public:
   Socket() {};
   ~Socket() {};
@@ -40,12 +40,12 @@ public:
   uint32_t write(const uint8_t* buffer, uint32_t size);
   void flush();
   void set_delegate(SocketDelegate* delegate) { _delegate = delegate; }
+  void shutdown();
 
   // These two functions determine what type of connection this will be
   bool listen(uint32_t port);
   bool connect(uint32_t ip, uint32_t port);
   bool connect(const std::string& hostname, uint32_t port);
-  void shutdown();
   bool is_connected() { return _state == SocketState::connected || _state == SocketState::connecting; }
 
   // Hooks for LWIP; shouldn't be called by clients

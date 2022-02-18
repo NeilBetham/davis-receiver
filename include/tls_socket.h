@@ -21,7 +21,7 @@ enum class TLSState {
   disconnected
 };
 
-class TLSSocket : public SocketDelegate {
+class TLSSocket : public SocketDelegate, public ISocket {
 public:
   TLSSocket(Socket& socket);
   ~TLSSocket() {};
@@ -29,10 +29,16 @@ public:
   void set_delegate(SocketDelegate* delegate) { _delegate = delegate; }
   bool connected() { return _tls_state == TLSState::connected; }
 
+  // Socket Interface
+  uint32_t write(const uint8_t* buffer, uint32_t size);
+  void flush() { _socket.flush(); }
+  void shutdown() { _socket.shutdown(); }
+  bool is_connected() { return _socket.is_connected(); }
+
   // SocketDelegate callbacks
-  void handle_rx(Socket* conn, std::string& data);
-  void handle_closed(Socket* conn);
-  void handle_tx(Socket* conn);
+  void handle_rx(ISocket* conn, std::string& data);
+  void handle_closed(ISocket* conn);
+  void handle_tx(ISocket* conn);
 
   // mbedtls hooks
   int recv(uint8_t* buffer, uint32_t len);

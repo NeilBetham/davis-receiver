@@ -7,7 +7,6 @@
 namespace {
 
 
-
 template <typename T>
 int recv_shim(void* ctx, uint8_t* buffer, size_t len) {
   return ((T*)(ctx))->recv(buffer, len);
@@ -69,7 +68,7 @@ TLSSocket::TLSSocket(Socket& socket) : _socket(socket) {
   mbedtls_ssl_conf_ca_chain(&_conf, &_cacert, NULL);
   mbedtls_ssl_conf_rng(&_conf, mbedtls_ctr_drbg_random, &_ctr_drbg);
   mbedtls_ssl_conf_dbg(&_conf, mbed_debug, NULL);
-  mbedtls_debug_set_threshold(1);
+  mbedtls_debug_set_threshold(0);
 
   // Configure the ssl instance
   ret = mbedtls_ssl_setup(&_ssl, &_conf);
@@ -83,7 +82,13 @@ TLSSocket::TLSSocket(Socket& socket) : _socket(socket) {
   mbedtls_ssl_set_bio(&_ssl, this, send_shim<TLSSocket>, recv_shim<TLSSocket>, NULL);
 }
 
-void TLSSocket::handle_rx(Socket* conn, std::string& data) {
+uint32_t TLSSocket::write(const uint8_t* buffer, uint32_t size) {
+  int ret = mbedtls_ssl_write(&_ssl, buffer, size);
+  if(ret > 0) { return ret; }
+  return 0;
+}
+
+void TLSSocket::handle_rx(ISocket* conn, std::string& data) {
   log_d("TLS Handle RX: {}", data.size());
   // Append the resceived data to our internal buffer;
   _buffer += data;
@@ -95,7 +100,7 @@ void TLSSocket::handle_rx(Socket* conn, std::string& data) {
       log_i("TLS Handshake complete");
       _tls_state = TLSState::connected;
       if(_delegate != NULL) {
-        _delegate->handle_tx(conn);
+        _delegate->handle_tx(this);
       }
     } else if(ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
       log_e("TLS Handshake failed");
@@ -108,7 +113,7 @@ void TLSSocket::handle_rx(Socket* conn, std::string& data) {
     bool reading = true;
     while(reading) {
       std::string buffer;
-      buffer.reserve(1500);  // TODO: Match the underlying transport MTU dynamically
+      buffer.resize(1500);  // TODO: Match the underlying transport MTU dynamically
       uint32_t read_bytes = mbedtls_ssl_read(&_ssl, (uint8_t*)&buffer[0], buffer.capacity());
 
       if(read_bytes == 0) {
@@ -118,7 +123,7 @@ void TLSSocket::handle_rx(Socket* conn, std::string& data) {
       } else if(read_bytes > 0) {
         buffer.resize(read_bytes);
         if(_delegate != NULL) {
-          _delegate->handle_rx(conn, buffer);
+          _delegate->handle_rx(this, buffer);
         }
       } else if(read_bytes == MBEDTLS_ERR_SSL_WANT_READ || read_bytes == MBEDTLS_ERR_SSL_WANT_WRITE) {
         reading = false;
@@ -128,13 +133,13 @@ void TLSSocket::handle_rx(Socket* conn, std::string& data) {
   _socket.flush();
 }
 
-void TLSSocket::handle_closed(Socket* conn) {
+void TLSSocket::handle_closed(ISocket* conn) {
   log_i("TLS Socket Closed");
   mbedtls_ssl_session_reset(&_ssl);
   _tls_state = TLSState::disconnected;
 }
 
-void TLSSocket::handle_tx(Socket* conn) {
+void TLSSocket::handle_tx(ISocket* conn) {
   log_d("TLS Handle TX");
   // If we are in an unknown state that means we need to start a handshake
   if(_tls_state == TLSState::unknown) {

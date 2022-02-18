@@ -36,12 +36,12 @@ void EthernetMac_ISR(void) {
 class TestSockDel : public SocketDelegate {
 public:
 
-  void handle_rx(Socket* conn, std::string& data) {
+  void handle_rx(ISocket* conn, std::string& data) {
     log_i("Resp: `{}`", data);
   }
-  void handle_closed(Socket* conn){}
+  void handle_closed(ISocket* conn){}
 
-  void handle_tx(Socket* conn) {
+  void handle_tx(ISocket* conn) {
     std::string req = "GET / HTTP/1.1\r\nHost: 10.0.1.1\r\n\r\n";
     log_i("Req: `{}`", req);
     conn->write((uint8_t*)req.data(), req.size());
@@ -163,12 +163,11 @@ int main(void){
 
     // Try connecting to the target host
     if(enet_driver.ip_valid() && !test_socket.is_connected()) {
-      //test_socket.connect("nimbus.cmo.hotdam.org", 443);
-      test_socket.connect(0xD704000A, 4333);
+      test_socket.connect("nimbus.cmo.hotdam.org", 443);
+      //test_socket.connect(0xD704000A, 4333);
     }
 
     // See if the ethernet driver has shit to do
-    enet_driver.tick();
     enet_driver.tick();
 
     // See if systick has things it needs to do
