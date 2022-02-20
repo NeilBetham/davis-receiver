@@ -13,6 +13,7 @@
 #include "packet_handler.h"
 #include "timer.h"
 #include "tls_socket.h"
+#include "entropy_pool.h"
 
 #include "socket_delegate.h"
 #include "socket.h"
@@ -99,6 +100,10 @@ int main(void){
   CORE_EN1 = 0xFFFFFFFF;
   CORE_EN2 = 0xFFFFFFFF;
   CORE_EN3 = 0xFFFFFFFF;
+
+  // ==================== Entropy Source Init ================
+  EntropyPool::init();
+
 
   // =============== Setup Peripherals  =======================
   systick_init();

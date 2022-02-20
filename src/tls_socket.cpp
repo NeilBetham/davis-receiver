@@ -1,6 +1,7 @@
 #include "tls_socket.h"
 
 #include "logging.h"
+#include "entropy_pool.h"
 
 #include "mbedtls/debug.h"
 
@@ -17,16 +18,11 @@ int send_shim(void* ctx, const uint8_t* buffer, size_t len) {
   return ((T*)(ctx))->send(buffer, len);
 }
 
-// TODO: Fix this before deployment
-int shitty_entropy_source(void* data, uint8_t* output, size_t len, size_t* out_len) {
-  for(uint32_t index = 0; index < len; index++) {
-    output[index] = 1;
-  }
-  *out_len = len;
-  return 0;
+int entropy_source(void* data, uint8_t* output, size_t len, size_t* outlen) {
+  return EntropyPool::instance().get_entropy(output, len, outlen);
 }
 
-void mbed_debug(void *ctx, int level, const char* file, int line, const char* str) {\
+void mbed_debug(void *ctx, int level, const char* file, int line, const char* str) {
   uint32_t len = strlen(str);
   ((char*)str)[len - 1] = 0; // TODO: =P This removes the newline on the mbed dbg msgs
   log_d("MBEDTLS [{}]-{}:{} - {}", level, file, line, str);
@@ -45,7 +41,7 @@ TLSSocket::TLSSocket(Socket& socket) : _socket(socket) {
   mbedtls_x509_crt_init(&_cacert);
   mbedtls_ctr_drbg_init(&_ctr_drbg);
   mbedtls_entropy_init(&_entropy);
-  mbedtls_entropy_add_source(&_entropy, shitty_entropy_source, NULL, 0, MBEDTLS_ENTROPY_SOURCE_STRONG); // =P
+  mbedtls_entropy_add_source(&_entropy, entropy_source, NULL, 0, MBEDTLS_ENTROPY_SOURCE_STRONG);
 
   // Seed the number generator
   if(mbedtls_ctr_drbg_seed(&_ctr_drbg, mbedtls_entropy_func, &_entropy, NULL, 0) != 0) {
@@ -114,7 +110,7 @@ void TLSSocket::handle_rx(ISocket* conn, std::string& data) {
     while(reading) {
       std::string buffer;
       buffer.resize(1500);  // TODO: Match the underlying transport MTU dynamically
-      uint32_t read_bytes = mbedtls_ssl_read(&_ssl, (uint8_t*)&buffer[0], buffer.capacity());
+      int32_t read_bytes = mbedtls_ssl_read(&_ssl, (uint8_t*)&buffer[0], buffer.capacity());
 
       if(read_bytes == 0) {
         mbedtls_ssl_session_reset(&_ssl);
