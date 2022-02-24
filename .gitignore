@@ -3,3 +3,6 @@ bazel-*
 
 # Ignore VIM swaps
 *.swp
+
+# Ignore the config files
+config.h

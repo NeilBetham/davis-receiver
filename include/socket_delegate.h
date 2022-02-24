@@ -15,7 +15,7 @@ class SocketDelegate {
 public:
   virtual ~SocketDelegate() {};
 
-  virtual void handle_rx(ISocket* conn, std::string& data) = 0;
+  virtual void handle_rx(ISocket* conn, const std::string& data) = 0;
   virtual void handle_closed(ISocket* conn) = 0;
 
   virtual void handle_accept(ISocket* conn) {};

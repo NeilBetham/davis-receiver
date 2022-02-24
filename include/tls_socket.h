@@ -30,13 +30,15 @@ public:
   bool connected() { return _tls_state == TLSState::connected; }
 
   // Socket Interface
+  bool connect(uint32_t ip, uint32_t port);
+  bool connect(const std::string& hostname, uint32_t port);
   uint32_t write(const uint8_t* buffer, uint32_t size);
   void flush() { _socket.flush(); }
   void shutdown() { _socket.shutdown(); }
   bool is_connected() { return _socket.is_connected(); }
 
   // SocketDelegate callbacks
-  void handle_rx(ISocket* conn, std::string& data);
+  void handle_rx(ISocket* conn, const std::string& data);
   void handle_closed(ISocket* conn);
   void handle_tx(ISocket* conn);
 
@@ -55,4 +57,6 @@ private:
   mbedtls_ssl_context _ssl;
   mbedtls_ssl_config _conf;
   mbedtls_x509_crt _cacert;
+
+  void init_tls();
 };

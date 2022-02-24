@@ -12,11 +12,8 @@
 #include "circular_buffer.h"
 #include "packet_handler.h"
 #include "timer.h"
-#include "tls_socket.h"
 #include "entropy_pool.h"
-
-#include "socket_delegate.h"
-#include "socket.h"
+#include "reading_reporter.h"
 
 #include "lwip/dhcp.h"
 #include "lwip/ip4_addr.h"
@@ -28,28 +25,12 @@
 ethernet::Driver<1550, 10> enet_driver;
 UART uart1(UART1_BASE, 115200);
 PacketHandler packet_handler;
+ReadingReporter reading_reporter;
 
 void EthernetMac_ISR(void) {
   enet_driver.interrupt_handler();
   sleep_int();
 }
-
-class TestSockDel : public SocketDelegate {
-public:
-
-  void handle_rx(ISocket* conn, std::string& data) {
-    log_i("Resp: `{}`", data);
-  }
-  void handle_closed(ISocket* conn){}
-
-  void handle_tx(ISocket* conn) {
-    std::string req = "GET / HTTP/1.1\r\nHost: 10.0.1.1\r\n\r\n";
-    log_i("Req: `{}`", req);
-    conn->write((uint8_t*)req.data(), req.size());
-    conn->flush();
-  }
-};
-
 
 int main(void){
   uint32_t reset_reason = SYSCTL_RESC;
@@ -138,16 +119,13 @@ int main(void){
   }
 
   packet_handler.init();
-
-  TestSockDel tsd;
-  Socket test_socket;
-  TLSSocket secure_socket(test_socket);
-  secure_socket.set_delegate(&tsd);
+  reading_reporter.init();
 
   // Start receiving packets
   while(1) {
     if(packet_handler.reading_waiting()){
       auto reading = packet_handler.get_reading();
+      reading_reporter.handle_reading(reading);
       log_i("Davis ISS, RSSI - {}, LQI - {}, Station - {}, Sensor - {}, Data [{:02X}, {:02X}, {:02X}], WindSpeed - {}, WindDir - {}, Name - {}, Value - {}",
         reading.packet.rssi,
         reading.packet.lqi,
@@ -161,15 +139,11 @@ int main(void){
         reading_type_string(reading.type),
         reading.value
       );
+
+      // Blinken lights!
       set_status_led(0, 1, 0);
       sleep(500);
       set_status_led(0, 0, 0);
-    }
-
-    // Try connecting to the target host
-    if(enet_driver.ip_valid() && !test_socket.is_connected()) {
-      test_socket.connect("nimbus.cmo.hotdam.org", 443);
-      //test_socket.connect(0xD704000A, 4333);
     }
 
     // See if the ethernet driver has shit to do

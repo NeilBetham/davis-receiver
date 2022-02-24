@@ -19,7 +19,9 @@ enum class ReadingType : uint8_t {
   temperature = 8,
   wind_speed_gusts = 9,
   humidity = 10,
-  rain_clicks = 14
+  rain_clicks = 14,
+  wind_speed = 100,  /// These last two are not in the wireless protocol but are added here for completeness
+  wind_dir = 101
 };
 
 

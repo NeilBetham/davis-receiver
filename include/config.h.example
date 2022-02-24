@@ -1,0 +1,11 @@
+/**
+ * @brief Configurable system parameters
+ */
+
+#include <stdint.h>
+#include <string>
+
+// Remote server reporting
+static const std::string REPORTING_SERVER_HOSTNAME = "example.org";
+static const uint32_t    REPORTING_SERVER_PORT     = 443;
+static const std::string REPORTING_SERVER_TOKEN    = "hackme!";

@@ -3,16 +3,18 @@
 #include <string>
 #include <string.h>
 
-static const std::string unknown = "unknown";
-static const std::string super_cap_voltage = "super_cap_voltage";
-static const std::string uv_index = "uv_index";
-static const std::string rain_rate = "rain_rate";
-static const std::string solar_radiation = "solar_radiation";
-static const std::string light = "light";
-static const std::string temperature = "temperature";
-static const std::string wind_speed_gusts = "wind_speed_gusts";
-static const std::string humidity = "humidity";
-static const std::string rain_clicks = "rain_clicks";
+static const std::string unknown = "Unknown";
+static const std::string super_cap_voltage = "SuperCapVoltage";
+static const std::string uv_index = "UVIndex";
+static const std::string rain_rate = "RainRate";
+static const std::string solar_radiation = "SolarRadiation";
+static const std::string light = "Light";
+static const std::string temperature = "Temperature";
+static const std::string wind_speed_gusts = "WindSpeedGusts";
+static const std::string humidity = "Humidity";
+static const std::string rain_clicks = "RainClicks";
+static const std::string wind_speed = "WindSpeed";
+static const std::string wind_dir = "WindDir";
 
 const std::string& reading_type_string(ReadingType reading_type) {
   switch(reading_type) {
@@ -25,6 +27,8 @@ const std::string& reading_type_string(ReadingType reading_type) {
     case ReadingType::wind_speed_gusts: return wind_speed_gusts;
     case ReadingType::humidity: return humidity;
     case ReadingType::rain_clicks: return rain_clicks;
+    case ReadingType::wind_speed: return wind_speed;
+    case ReadingType::wind_dir: return wind_dir;
     default: return unknown;
   }
 }

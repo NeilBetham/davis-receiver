@@ -5,9 +5,12 @@
 #pragma once
 
 
-#include "received_packet.h"
+#include "packet_parser.h"
 
 #include <string>
 
 
-std::string convert_json_payload(const ReceivedPacket& packet);
+std::string value_json_payload(const Reading& packet);
+std::string wind_speed_json_payload(const Reading& packet);
+std::string wind_dir_payload(const Reading& packet);
+std::string root_reading_payload(const std::string& reading_sub_payload);

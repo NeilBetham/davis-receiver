@@ -34,48 +34,16 @@ void mbed_debug(void *ctx, int level, const char* file, int line, const char* st
 
 TLSSocket::TLSSocket(Socket& socket) : _socket(socket) {
   _socket.set_delegate(this);
+}
 
-  // Init all the stuff we need for the TLS connection
-  mbedtls_ssl_init(&_ssl);
-  mbedtls_ssl_config_init(&_conf);
-  mbedtls_x509_crt_init(&_cacert);
-  mbedtls_ctr_drbg_init(&_ctr_drbg);
-  mbedtls_entropy_init(&_entropy);
-  mbedtls_entropy_add_source(&_entropy, entropy_source, NULL, 0, MBEDTLS_ENTROPY_SOURCE_STRONG);
+bool TLSSocket::connect(uint32_t ip, uint32_t port) {
+  init_tls();
+  return _socket.connect(ip, port);
+}
 
-  // Seed the number generator
-  if(mbedtls_ctr_drbg_seed(&_ctr_drbg, mbedtls_entropy_func, &_entropy, NULL, 0) != 0) {
-    log_e("Failed to seed mbedtls PRNG");
-  }
-
-  // Setup ssl config
-  uint32_t ret = mbedtls_ssl_config_defaults(&_conf,
-    MBEDTLS_SSL_IS_CLIENT,
-    MBEDTLS_SSL_TRANSPORT_STREAM,
-    MBEDTLS_SSL_PRESET_DEFAULT
-  );
-  if(ret != 0 ) {
-    _tls_state = TLSState::error;
-    log_e("Failed to init default SSL config");
-    return;
-  }
-
-  mbedtls_ssl_conf_authmode(&_conf, MBEDTLS_SSL_VERIFY_NONE);
-  mbedtls_ssl_conf_ca_chain(&_conf, &_cacert, NULL);
-  mbedtls_ssl_conf_rng(&_conf, mbedtls_ctr_drbg_random, &_ctr_drbg);
-  mbedtls_ssl_conf_dbg(&_conf, mbed_debug, NULL);
-  mbedtls_debug_set_threshold(0);
-
-  // Configure the ssl instance
-  ret = mbedtls_ssl_setup(&_ssl, &_conf);
-  if(ret != 0) {
-    _tls_state = TLSState::error;
-    log_e("Failed to setup ssl instance with config");
-    return;
-  }
-
-  // Configure the network hooks
-  mbedtls_ssl_set_bio(&_ssl, this, send_shim<TLSSocket>, recv_shim<TLSSocket>, NULL);
+bool TLSSocket::connect(const std::string& hostname, uint32_t port) {
+  init_tls();
+  return _socket.connect(hostname, port);
 }
 
 uint32_t TLSSocket::write(const uint8_t* buffer, uint32_t size) {
@@ -84,7 +52,7 @@ uint32_t TLSSocket::write(const uint8_t* buffer, uint32_t size) {
   return 0;
 }
 
-void TLSSocket::handle_rx(ISocket* conn, std::string& data) {
+void TLSSocket::handle_rx(ISocket* conn, const std::string& data) {
   log_d("TLS Handle RX: {}", data.size());
   // Append the resceived data to our internal buffer;
   _buffer += data;
@@ -164,4 +132,47 @@ int TLSSocket::send(const uint8_t* buffer, uint32_t len) {
   int bytes_written = _socket.write(buffer, len);
   log_d("TLS write: {} -> {}", len, bytes_written);
   return bytes_written;
+}
+
+void TLSSocket::init_tls() {
+  mbedtls_ssl_init(&_ssl);
+  mbedtls_ssl_config_init(&_conf);
+  mbedtls_x509_crt_init(&_cacert);
+  mbedtls_ctr_drbg_init(&_ctr_drbg);
+  mbedtls_entropy_init(&_entropy);
+  mbedtls_entropy_add_source(&_entropy, entropy_source, NULL, 0, MBEDTLS_ENTROPY_SOURCE_STRONG);
+
+  // Seed the number generator
+  if(mbedtls_ctr_drbg_seed(&_ctr_drbg, mbedtls_entropy_func, &_entropy, NULL, 0) != 0) {
+    log_e("Failed to seed mbedtls PRNG");
+  }
+
+  // Setup ssl config
+  uint32_t ret = mbedtls_ssl_config_defaults(&_conf,
+    MBEDTLS_SSL_IS_CLIENT,
+    MBEDTLS_SSL_TRANSPORT_STREAM,
+    MBEDTLS_SSL_PRESET_DEFAULT
+  );
+  if(ret != 0 ) {
+    _tls_state = TLSState::error;
+    log_e("Failed to init default SSL config");
+    return;
+  }
+
+  mbedtls_ssl_conf_authmode(&_conf, MBEDTLS_SSL_VERIFY_NONE);
+  mbedtls_ssl_conf_ca_chain(&_conf, &_cacert, NULL);
+  mbedtls_ssl_conf_rng(&_conf, mbedtls_ctr_drbg_random, &_ctr_drbg);
+  mbedtls_ssl_conf_dbg(&_conf, mbed_debug, NULL);
+  mbedtls_debug_set_threshold(1);
+
+  // Configure the ssl instance
+  ret = mbedtls_ssl_setup(&_ssl, &_conf);
+  if(ret != 0) {
+    _tls_state = TLSState::error;
+    log_e("Failed to setup ssl instance with config");
+    return;
+  }
+
+  // Configure the network hooks
+  mbedtls_ssl_set_bio(&_ssl, this, send_shim<TLSSocket>, recv_shim<TLSSocket>, NULL);
 }
