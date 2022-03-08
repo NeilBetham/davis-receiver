@@ -15,10 +15,11 @@ static const std::string reading_json_template = "{{\"reading\":{{\
   \"decoded_value\": \"{}\"\
 }}}}";
 
-static const std::string http_post_template = "POST {} HTTP/1.1 \r\n\
-HOST: {} \r\n\
+static const std::string http_post_template = "POST {} HTTP/1.1\r\n\
+HOST: {}:{} \r\n\
 Content-Type: application/json \r\n\
 Content-Length: {} \r\n\
+Accept: application/json \r\n\
 Authorization: {} \r\n\
 \r\n\
 {}";
@@ -41,6 +42,7 @@ std::string generate_post_req(const ReadingReport& report) {
 		http_post_template,
 		REPORTING_SERVER_URL,
 		REPORTING_SERVER_HOSTNAME,
+		REPORTING_SERVER_PORT,
 		payload.size(),
 		REPORTING_SERVER_TOKEN,
 		payload
@@ -58,6 +60,11 @@ void ReadingReporter::init() {
 
 void ReadingReporter::handle_reading(const Reading& reading) {
   connect_to_server();
+
+  if(!_tls_socket.connected()) {
+    // While the reading can't be timestampped, don't buffer packets if we can't post them
+    return;
+  }
 
   // Generate a report for the three elements of the reading
 	ReadingReport value_report;
@@ -102,17 +109,22 @@ void ReadingReporter::handle_reading(const Reading& reading) {
 }
 
 void ReadingReporter::handle_rx(ISocket* conn, const std::string& data) {
-  // Check the response for the return code
-  auto pos = data.find(" ");
-  auto return_code = data.substr(pos + 1, 3);
-  uint32_t code = std::atoi(return_code.c_str());
-  log_d("Return code `{}` => {}", return_code, code);
+  // Buffer up data until the double newline
+  _rx_buffer += data;
 
-  if(code < 300) {
-    reading_posted(true);
-  } else {
-    reading_posted(false);
-  }
+  // Find the end of the current response
+  auto response_end = _rx_buffer.find("0\r\n\r\n");
+
+  // If we don't have a full response yet wait for more data
+  if(response_end == std::string::npos) { return; }
+
+  // Add five bytes so that the end pos includes the trailing chunk
+  response_end += 5;
+
+  handle_response(response_end);
+
+  // Delete the part of the RX buffer where the handled response is
+  _rx_buffer = _rx_buffer.substr(response_end);
 }
 
 void ReadingReporter::handle_closed(ISocket* conn) {
@@ -140,11 +152,13 @@ void ReadingReporter::post_reading() {
 
 void ReadingReporter::reading_posted(bool successful) {
   if(successful) {
+    log_i("Reading posted");
     _in_transit_reading_valid = false;
     if(_reading_buffer.can_pop()) {
       post_reading();
     }
   } else {
+    log_w("Failed to post reading, retrying");
     post_reading();
   }
 }
@@ -153,5 +167,21 @@ void ReadingReporter::connect_to_server() {
   if(!_socket.is_connected()) {
     log_d("Reading Reporter Connecting: {}:{}", REPORTING_SERVER_HOSTNAME, REPORTING_SERVER_PORT);
     _tls_socket.connect(REPORTING_SERVER_HOSTNAME, REPORTING_SERVER_PORT);
+  }
+}
+
+void ReadingReporter::handle_response(uint32_t end_pos) {
+  auto response = _rx_buffer.substr(0, end_pos);
+
+  // Check the response for the return code
+  auto pos = response.find(" ");
+  auto return_code = response.substr(pos + 1, 3);
+  uint32_t code = std::atoi(return_code.c_str());
+  log_d("Return code `{}` => {}", return_code, code);
+
+  if(code < 300) {
+    reading_posted(true);
+  } else {
+    reading_posted(false);
   }
 }

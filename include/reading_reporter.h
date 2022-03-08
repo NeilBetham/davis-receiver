@@ -36,9 +36,11 @@ private:
   TLSSocket _tls_socket;
   CircularBuffer<ReadingReport, 60> _reading_buffer;
   ReadingReport _in_transit_reading;
+  std::string _rx_buffer;
   bool _in_transit_reading_valid = false;
 
   void post_reading();
   void reading_posted(bool successful);
   void connect_to_server();
+  void handle_response(uint32_t end_pos);
 };

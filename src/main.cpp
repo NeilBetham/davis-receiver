@@ -157,3 +157,8 @@ int main(void){
     WFE();
   }
 }
+
+
+void __stack_chk_fail() {
+  log_e("Stack check failed");
+}
