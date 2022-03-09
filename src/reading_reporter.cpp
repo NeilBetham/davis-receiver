@@ -62,7 +62,7 @@ void ReadingReporter::handle_reading(const Reading& reading) {
   connect_to_server();
 
   if(!_tls_socket.connected()) {
-    // While the reading can't be timestampped, don't buffer packets if we can't post them
+    //TODO: While the reading can't be timestampped, don't buffer packets if we can't post them
     return;
   }
 

@@ -106,7 +106,7 @@ void TLSSocket::handle_closed(ISocket* conn) {
 void TLSSocket::handle_tx(ISocket* conn) {
   log_d("TLS Handle TX");
   // If we are in an unknown state that means we need to start a handshake
-  if(_tls_state == TLSState::unknown) {
+  if(_tls_state == TLSState::unknown || _tls_state == TLSState::disconnected) {
     log_d("Starting TLS Handshake");
     _tls_state = TLSState::init;
     uint32_t ret = mbedtls_ssl_handshake(&_ssl);
@@ -135,6 +135,8 @@ int TLSSocket::send(const uint8_t* buffer, uint32_t len) {
 }
 
 void TLSSocket::init_tls() {
+  if(_mbedtls_inited) { return; }
+  log_i("MBedTLS Init");
   mbedtls_ssl_init(&_ssl);
   mbedtls_ssl_config_init(&_conf);
   mbedtls_x509_crt_init(&_cacert);
@@ -175,4 +177,6 @@ void TLSSocket::init_tls() {
 
   // Configure the network hooks
   mbedtls_ssl_set_bio(&_ssl, this, send_shim<TLSSocket>, recv_shim<TLSSocket>, NULL);
+
+  _mbedtls_inited = true;
 }

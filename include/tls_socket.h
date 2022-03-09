@@ -51,6 +51,7 @@ private:
   SocketDelegate* _delegate = NULL;
   TLSState _tls_state = TLSState::unknown;
   std::string _buffer;
+  bool _mbedtls_inited = false;
 
   mbedtls_entropy_context _entropy;
   mbedtls_ctr_drbg_context _ctr_drbg;
