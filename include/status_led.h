@@ -1,3 +1,7 @@
+/**
+ * @biref Manages the onboard status LED
+ */
+
 #pragma once
 
 #include <stdint.h>

@@ -34,6 +34,7 @@ void EthernetMac_ISR(void) {
 
 int main(void){
   uint32_t reset_reason = SYSCTL_RESC;
+
   // ============== Crystal Init =======================
   // Set the crytsal range to high and clear the power down bit
   SYSCTL_MOSCCTL  |=   0x00000010;
@@ -87,12 +88,14 @@ int main(void){
 
 
   // =============== Setup Peripherals  =======================
-  systick_init();
+  init_status_led();
+  set_status_led(0x88, 0x88, 0x88);
 
+  systick_init();
   uart1.init();
 
   logging_init(&uart1);
-  logging_set_log_level(LogLevel::debug);
+  logging_set_log_level(LogLevel::info);
   log_i("Hello World!");
 
   enet_driver.init();
@@ -101,16 +104,6 @@ int main(void){
   init_cc1125();
   init_status_led();
 
-  // Flash some LEDs to make it known we are alive
-  set_status_led(1, 0, 0);
-  sleep(1000);
-  set_status_led(0, 1, 0);
-  sleep(1000);
-  set_status_led(0, 0, 1);
-  sleep(1000);
-  set_status_led(1, 1, 1);
-  sleep(1000);
-  set_status_led(0, 0, 0);
 
   // Start DHCP
   err_t ret = dhcp_start(&enet_driver.netif());
@@ -120,6 +113,8 @@ int main(void){
 
   packet_handler.init();
   reading_reporter.init();
+
+  set_status_led(0, 0, 0);
 
   // Start receiving packets
   while(1) {
@@ -141,7 +136,7 @@ int main(void){
       );
 
       // Blinken lights!
-      set_status_led(0, 1, 0);
+      set_status_led(0, 0x22, 0);
       sleep(500);
       set_status_led(0, 0, 0);
     }

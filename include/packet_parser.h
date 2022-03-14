@@ -35,5 +35,5 @@ struct Reading {
 };
 
 
-const std::string& reading_type_string(ReadingType reading_type);
+const std::string reading_type_string(ReadingType reading_type);
 Reading parse_packet(ReceivedPacket received_packeti);

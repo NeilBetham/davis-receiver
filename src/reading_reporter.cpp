@@ -11,7 +11,7 @@ namespace {
 
 static const std::string reading_json_template = "{{\"reading\":{{\
   \"type\": \"{}\",\
-  \"raw_value\": \"{:X}{:X}{:X}\",\
+  \"raw_value\": \"{:02X}{:02X}{:02X}\",\
   \"decoded_value\": \"{}\"\
 }}}}";
 

@@ -3,20 +3,24 @@
 #include <string>
 #include <string.h>
 
-static const std::string unknown = "Unknown";
+#define FMT_HEADER_ONLY
+#include <fmt/core.h>
+
+
+static const std::string unknown = "Unknown Reading Type: {}";
 static const std::string super_cap_voltage = "SuperCapVoltage";
 static const std::string uv_index = "UVIndex";
 static const std::string rain_rate = "RainRate";
 static const std::string solar_radiation = "SolarRadiation";
 static const std::string light = "Light";
 static const std::string temperature = "Temperature";
-static const std::string wind_speed_gusts = "WindSpeedGusts";
+static const std::string wind_speed_gusts = "WindGustSpeed";
 static const std::string humidity = "Humidity";
 static const std::string rain_clicks = "RainClicks";
 static const std::string wind_speed = "WindSpeed";
 static const std::string wind_dir = "WindDir";
 
-const std::string& reading_type_string(ReadingType reading_type) {
+const std::string reading_type_string(ReadingType reading_type) {
   switch(reading_type) {
     case ReadingType::super_cap_voltage: return super_cap_voltage;
     case ReadingType::uv_index: return uv_index;
@@ -29,7 +33,7 @@ const std::string& reading_type_string(ReadingType reading_type) {
     case ReadingType::rain_clicks: return rain_clicks;
     case ReadingType::wind_speed: return wind_speed;
     case ReadingType::wind_dir: return wind_dir;
-    default: return unknown;
+    default: return fmt::format(unknown, (uint8_t)reading_type);
   }
 }
 
@@ -77,6 +81,12 @@ float convert_rain_clicks(const Reading& reading) {
   return (float)(reading.raw_data[0] & 0x7F);
 }
 
+float convert_unknown(const Reading& reading) {
+  uint32_t ret = 0;
+  ret = (((uint32_t)reading.raw_data[0]) << 16) | (((uint32_t)reading.raw_data[1]) << 8) | ((uint32_t)reading.raw_data[2]);
+  return (float)ret;
+}
+
 static float convert_reading_to_float(const Reading& reading) {
   switch(reading.type) {
     case ReadingType::super_cap_voltage: return convert_super_cap_voltage(reading);
@@ -88,7 +98,7 @@ static float convert_reading_to_float(const Reading& reading) {
     case ReadingType::wind_speed_gusts: return convert_wind_speed_gusts(reading);
     case ReadingType::humidity: return convert_humidity(reading);
     case ReadingType::rain_clicks: return convert_rain_clicks(reading);
-    default: return 0.0;
+    default: return convert_unknown(reading);
   }
 }
 
