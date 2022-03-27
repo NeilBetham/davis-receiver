@@ -14,6 +14,7 @@
 #include "timer.h"
 #include "entropy_pool.h"
 #include "reading_reporter.h"
+#include "status_animator.h"
 
 #include "lwip/dhcp.h"
 #include "lwip/ip4_addr.h"
@@ -26,6 +27,7 @@ ethernet::Driver<1550, 10> enet_driver;
 UART uart1(UART1_BASE, 115200);
 PacketHandler packet_handler;
 ReadingReporter reading_reporter;
+StatusAnimator status_animator;
 
 void EthernetMac_ISR(void) {
   enet_driver.interrupt_handler();
@@ -89,7 +91,6 @@ int main(void){
 
   // =============== Setup Peripherals  =======================
   init_status_led();
-  set_status_led(0x88, 0x88, 0x88);
 
   systick_init();
   uart1.init();
@@ -114,8 +115,6 @@ int main(void){
   packet_handler.init();
   reading_reporter.init();
 
-  set_status_led(0, 0, 0);
-
   // Start receiving packets
   while(1) {
     if(packet_handler.reading_waiting()){
@@ -134,12 +133,12 @@ int main(void){
         reading_type_string(reading.type),
         reading.value
       );
-
-      // Blinken lights!
-      set_status_led(0, 0x22, 0);
-      sleep(500);
-      set_status_led(0, 0, 0);
     }
+
+    // Do some status LED updates
+    status_animator.connected_to_network(enet_driver.ip_valid());
+    status_animator.connected_to_server(reading_reporter.connected_to_server());
+    status_animator.synced_with_transmitter(packet_handler.synced());
 
     // See if the ethernet driver has shit to do
     enet_driver.tick();

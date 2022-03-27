@@ -32,6 +32,7 @@ public:
 
   void timer_event();
 
+  bool synced();
 
 private:
   void handle_hop();

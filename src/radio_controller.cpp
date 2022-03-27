@@ -19,6 +19,7 @@ void RadioController::good_packet_rx() {
   _dwell_timer.stop();
   _packet_count++;
   _bad_packet_count = 0;
+  _last_packet_rx = sys_now();
   handle_hop();
 }
 
@@ -47,4 +48,11 @@ void RadioController::handle_hop() {
     log_d("Hopping to: {}", freq);
     _dwell_timer.start();
   }
+}
+
+bool RadioController::synced() {
+  if(_bad_packet_count < BAD_PACKET_CONT_LIM && _last_packet_rx != 0) {
+    return true;
+  }
+  return false;
 }

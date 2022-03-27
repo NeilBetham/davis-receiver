@@ -23,6 +23,8 @@ public:
 	bool reading_waiting();
 	Reading get_reading();
 
+  bool synced() { return _radio_controller.synced(); }
+
 private:
   CRC _crc;
   CircularBuffer<Reading, 10> _reading_buffer;

@@ -31,6 +31,8 @@ public:
   void handle_rx(ISocket* conn, const std::string& data);
   void handle_closed(ISocket* conn);
 
+  bool connected_to_server() { return _tls_socket.connected(); };
+
 private:
   Socket _socket;
   TLSSocket _tls_socket;
