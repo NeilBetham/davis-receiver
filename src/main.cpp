@@ -15,6 +15,7 @@
 #include "entropy_pool.h"
 #include "reading_reporter.h"
 #include "status_animator.h"
+#include "baro_manager.h"
 
 #include "lwip/dhcp.h"
 #include "lwip/ip4_addr.h"
@@ -28,6 +29,7 @@ UART uart1(UART1_BASE, 115200);
 PacketHandler packet_handler;
 ReadingReporter reading_reporter;
 StatusAnimator status_animator;
+// BaroManager baro_manager(reading_reporter);
 
 void EthernetMac_ISR(void) {
   enet_driver.interrupt_handler();
@@ -152,7 +154,3 @@ int main(void){
   }
 }
 
-
-void __stack_chk_fail() {
-  log_e("Stack check failed");
-}

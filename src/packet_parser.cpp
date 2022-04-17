@@ -19,6 +19,7 @@ static const std::string humidity = "Humidity";
 static const std::string rain_clicks = "RainClicks";
 static const std::string wind_speed = "WindSpeed";
 static const std::string wind_dir = "WindDir";
+static const std::string barometer = "Barometer";
 
 const std::string reading_type_string(ReadingType reading_type) {
   switch(reading_type) {
@@ -33,6 +34,7 @@ const std::string reading_type_string(ReadingType reading_type) {
     case ReadingType::rain_clicks: return rain_clicks;
     case ReadingType::wind_speed: return wind_speed;
     case ReadingType::wind_dir: return wind_dir;
+    case ReadingType::barometer: return barometer;
     default: return fmt::format(unknown, (uint8_t)reading_type);
   }
 }

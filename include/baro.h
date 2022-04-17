@@ -6,7 +6,7 @@
 
 #include <stdint.h>
 
-#include "registers/helpers.h"
+#include "registers/register_helpers.h"
 
 typedef struct PACKED {
   uint8_t command: 4;
@@ -53,7 +53,7 @@ typedef struct PACKED {
   uint8_t status: 2;
   uint16_t data: 12;
   uint8_t zeros: 4;
-  uint8_t status: 2;
+  uint8_t d_status: 2;
   uint8_t crc;
 } BaroSensorReadResponse;
 
@@ -61,7 +61,7 @@ namespace baro {
 
 
 void init_barometer();
-float read_pressure();
+bool read_pressure(float& baro_reading);
 
 
 } // namespace baro

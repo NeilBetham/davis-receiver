@@ -20,8 +20,11 @@ enum class ReadingType : uint8_t {
   wind_speed_gusts = 9,
   humidity = 10,
   rain_clicks = 14,
-  wind_speed = 100,  /// These last two are not in the wireless protocol but are added here for completeness
-  wind_dir = 101
+
+  /// These last few are not in the wireless protocol but are used to break down each packet
+  wind_speed = 100,
+  wind_dir = 101,
+  barometer = 102
 };
 
 
@@ -36,4 +39,4 @@ struct Reading {
 
 
 const std::string reading_type_string(ReadingType reading_type);
-Reading parse_packet(ReceivedPacket received_packeti);
+Reading parse_packet(ReceivedPacket received_packet);

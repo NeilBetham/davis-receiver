@@ -108,6 +108,16 @@ void ReadingReporter::handle_reading(const Reading& reading) {
   post_reading();
 }
 
+void ReadingReporter::handle_report(const ReadingReport& report) {
+  if(_reading_buffer.can_push()) {
+    _reading_buffer.push(report);
+  } else {
+    log_w("Report dropped: buffer full");
+  }
+
+  post_reading();
+}
+
 void ReadingReporter::handle_rx(ISocket* conn, const std::string& data) {
   // Buffer up data until the double newline
   _rx_buffer += data;
@@ -135,6 +145,10 @@ void ReadingReporter::handle_closed(ISocket* conn) {
 }
 
 void ReadingReporter::post_reading() {
+  // TODO: Don't try to send the same report multiple times unless something
+  //       has timed out or if there is a negative response returned from the
+  //       server
+
   // Check if we need to pop a new reading to post
   if(_in_transit_reading_valid == false) {
     if(!_reading_buffer.can_pop()) { return; }

@@ -25,6 +25,7 @@ public:
 
   void init();
   void handle_reading(const Reading& reading);
+  void handle_report(const ReadingReport& report);
 
   // SocketDelegate
   void handle_tx(ISocket* conn) {};
