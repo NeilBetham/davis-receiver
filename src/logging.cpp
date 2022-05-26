@@ -1,27 +1,36 @@
 #include "logging.h"
 
-static UART* global_logger_uart = NULL;
+#include <list>
+
 static LogLevel global_log_level = LogLevel::unknown;
+static std::list<LoggingSink*> global_logging_sinks;
 
-
-void logging_init(UART* output_uart) {
-  global_logger_uart = output_uart;
-}
 
 void logging_set_log_level(LogLevel level) {
   global_log_level = level;
 }
 
+void logging_add_sink(LoggingSink* sink) {
+  global_logging_sinks.push_back(sink);
+}
+
+void logging_remove_sink(LoggingSink* sink) {
+  for(auto sink_it = global_logging_sinks.begin(); sink_it != global_logging_sinks.end(); sink_it++) {
+    if(*sink_it == sink) {
+      global_logging_sinks.erase(sink_it);
+    }
+  }
+}
+
 void log_message(LogLevel level, const std::string& message) {
   if(level == LogLevel::unknown) { return; }
-
-  // Check if we have an ouput UART to log to
-  if(global_logger_uart == NULL) { return; }
 
   // Check if the log level should be printed
   if(level < global_log_level) { return; }
 
-  // Write to the UART
-  global_logger_uart->send(message.c_str());
+  // Write to available sinks
+  for(auto sink_ptr : global_logging_sinks) {
+    sink_ptr->submit_log(message);
+  }
 }
 

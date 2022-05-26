@@ -6,6 +6,8 @@
 
 #include <stdint.h>
 
+class SocketDelegate;
+
 class ISocket {
 public:
   virtual ~ISocket() {};
@@ -14,4 +16,5 @@ public:
   virtual void flush() = 0;
   virtual void shutdown() = 0;
   virtual bool is_connected() = 0;
+  virtual void set_delegate(SocketDelegate* delegate) = 0;
 };

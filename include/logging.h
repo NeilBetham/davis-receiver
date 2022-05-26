@@ -4,8 +4,8 @@
 
 #pragma once
 
+#include "logging_sink.h"
 #include "uart.h"
-
 #include "sys_tick.h"
 
 #define FMT_HEADER_ONLY
@@ -20,8 +20,10 @@ enum class LogLevel : uint8_t {
   error
 };
 
-void logging_init(UART* output_uart);
 void logging_set_log_level(LogLevel level);
+void logging_add_sink(LoggingSink* sink);
+void logging_remove_sink(LoggingSink* sink);
+
 
 void log_message(LogLevel level, const std::string& message);
 

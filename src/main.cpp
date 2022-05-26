@@ -16,6 +16,8 @@
 #include "reading_reporter.h"
 #include "status_animator.h"
 #include "baro_manager.h"
+#include "logging_uart.h"
+#include "logging_server.h"
 
 #include "lwip/dhcp.h"
 #include "lwip/ip4_addr.h"
@@ -26,6 +28,7 @@
 
 ethernet::Driver<1550, 10> enet_driver;
 UART uart1(UART1_BASE, 115200);
+LoggingUart uart_logger(uart1);
 PacketHandler packet_handler;
 ReadingReporter reading_reporter;
 StatusAnimator status_animator;
@@ -91,13 +94,16 @@ int main(void){
   EntropyPool::init();
 
 
-  // =============== Setup Peripherals  =======================
+  // =============== Setup Peripherals =======================
   init_status_led();
 
   systick_init();
   uart1.init();
 
-  logging_init(&uart1);
+  // ====================== Setup logging ===================
+  LoggingServer logging_server(4321);
+  logging_add_sink(&uart_logger);
+  logging_add_sink(&logging_server);
   logging_set_log_level(LogLevel::info);
   log_i("Hello World!");
 
@@ -116,6 +122,7 @@ int main(void){
 
   packet_handler.init();
   reading_reporter.init();
+  logging_server.start();
 
   // Start receiving packets
   while(1) {
@@ -149,7 +156,7 @@ int main(void){
     systick_run();
 
     // Pet the WDT
-    //WDT0_ICR = 1;
+    WDT0_ICR = 1;
     WFE();
   }
 }

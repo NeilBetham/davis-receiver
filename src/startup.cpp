@@ -86,7 +86,7 @@ void system_setup() {
   // Enable the floating point co-processor
   CORE_CPAC |= 0x00F00000;
 
-  // start_wdt();
+  start_wdt();
 
   // Disable memory write buffer for debug only
   //CORE_ACTLR |= BIT_1;

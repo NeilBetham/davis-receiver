@@ -42,12 +42,13 @@ void RadioController::timer_event() {
 }
 
 void RadioController::handle_hop() {
+  uint32_t freq = _hop_controller.current_hop();
   if(should_hop()) {
-    uint32_t freq = _hop_controller.hop();
-    start_rx(freq);
+    freq = _hop_controller.hop();
     log_d("Hopping to: {}", freq);
     _dwell_timer.start();
   }
+  start_rx(freq);
 }
 
 bool RadioController::synced() {
