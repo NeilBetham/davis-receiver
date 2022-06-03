@@ -27,5 +27,6 @@ uint8_t start_rx(uint32_t freq);
 uint8_t get_radio_state();
 uint8_t rx_byte_count();
 uint8_t receive_packet(uint8_t* buffer);
+int32_t read_frequency_offset();
 
 void register_delegate(RadioDelegate* delegate);

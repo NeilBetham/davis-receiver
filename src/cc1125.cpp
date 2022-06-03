@@ -5,6 +5,8 @@
 #include "utils.h"
 #include "logging.h"
 
+#include <math.h>
+
 #define SPI_BUFFER_SIZES 130
 
 static RadioDelegate* g_delegate = NULL;
@@ -175,7 +177,7 @@ uint8_t init_cc1125() {
     {CC1125_PREAMBLE_CFG0,     0x3A},
     {CC1125_FREQ_IF_CFG,       0x31},
     {CC1125_IQIC,              0x4E},
-    {CC1125_CHAN_BW,           0x03},
+    {CC1125_CHAN_BW,           0x04},
     {CC1125_MDMCFG0,           0x05},
     {CC1125_SYMBOL_RATE2,      0x7F},
     {CC1125_SYMBOL_RATE1,      0x75},
@@ -274,6 +276,25 @@ void handle_received_packet() {
   if(g_delegate != NULL) {
     g_delegate->handle_packet(buffer, packet_length);
   }
+}
+
+int32_t read_frequency_offset() {
+  constexpr int32_t denom = std::pow(2, 18) * 4;
+  uint8_t freq_off_est_msb = 0;
+  uint8_t freq_off_est_lsb = 0;
+
+  read_register(CC1125_FREQOFF_EST1, 1, &freq_off_est_msb);
+  read_register(CC1125_FREQOFF_EST0, 1, &freq_off_est_lsb);
+
+  int16_t freq_offset = freq_off_est_lsb + (freq_off_est_msb << 8);
+
+  // Convert the value from counts to the actual offset
+  // offset_hz =  (offset_counts * fxosc) / (lo_divider * 2 ^ 18)
+  // lo_divider = 4 (915 MHz)
+  // fxosc = 40000000Hz
+  int32_t frequency = (freq_offset * 40000000) / denom;
+
+  return frequency;
 }
 
 void register_delegate(RadioDelegate* delegate) {

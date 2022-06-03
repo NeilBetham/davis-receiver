@@ -11,7 +11,7 @@ public:
   uint32_t hop();
   uint32_t current_hop();
   uint32_t next_hop();
-
+  uint32_t current_index() { return _current_hop; }
 
 private:
   uint32_t next_index();

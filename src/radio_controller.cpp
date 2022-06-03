@@ -20,6 +20,13 @@ void RadioController::good_packet_rx() {
   _packet_count++;
   _bad_packet_count = 0;
   _last_packet_rx = sys_now();
+
+  // Read the frequency offset
+  int32_t new_offset = read_frequency_offset();
+  _freq_offset_table[_hop_controller.current_index()] += new_offset;
+  log_i("New Freq Offset: {}", new_offset);
+
+
   handle_hop();
 }
 
@@ -43,12 +50,16 @@ void RadioController::timer_event() {
 
 void RadioController::handle_hop() {
   uint32_t freq = _hop_controller.current_hop();
+  int32_t offset = _freq_offset_table[_hop_controller.current_index()];
   if(should_hop()) {
     freq = _hop_controller.hop();
-    log_d("Hopping to: {}", freq);
+    offset = _freq_offset_table[_hop_controller.current_index()];
     _dwell_timer.start();
   }
-  start_rx(freq);
+
+  log_i("Hop {} - Freq: {}, Offset: {}", _hop_controller.current_index(), freq, offset);
+
+  start_rx(freq + offset);
 }
 
 bool RadioController::synced() {
