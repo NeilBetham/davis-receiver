@@ -21,6 +21,12 @@ void PacketHandler::handle_packet(uint8_t* buffer, uint32_t length) {
   uint8_t lqi = buffer[length - 1] & 0x7F;
   uint8_t crc_ok = crc == 0;
 
+  // If the crc is bad just ignore the packet and move on
+  if(crc_ok != true) {
+    log_i("Bad CRC: {:04X}", crc);
+    return;
+  }
+
   // Build the packet struct
   ReceivedPacket packet;
   packet.frequency = _radio_controller.current_hop();
@@ -32,11 +38,8 @@ void PacketHandler::handle_packet(uint8_t* buffer, uint32_t length) {
   packet.station_id = (buffer[0] & 0x07) + 1;
   packet.sensor_id = (buffer[0] & 0xF0) >> 4;
 
-  if(!packet.valid) {
-    _radio_controller.bad_packet_rx();
-    log_i("Packet Invalid - CRC: {:04X}", crc);
-    return;
-  } else {
+  // If the packet was good hop to the next channel
+  if(packet.valid) {
     _radio_controller.good_packet_rx();
   }
 
