@@ -31,4 +31,6 @@ private:
   uint32_t _port = 0;
   Socket _socket;
   std::list<ISocket*> _active_conns;
+  uint8_t _log_buffer[1024] = {0};
+  uint32_t _buffer_write_pos = 0;
 };

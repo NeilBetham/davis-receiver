@@ -24,6 +24,7 @@ void RadioController::good_packet_rx() {
   // Read the frequency offset
   int32_t new_offset = read_frequency_offset();
   _freq_offset_table[_hop_controller.current_index()] += new_offset;
+  _freq_bad_pkt_count[_hop_controller.current_index()] = 0;
   log_i("New Freq Offset: {}", new_offset);
 
 
@@ -33,9 +34,22 @@ void RadioController::good_packet_rx() {
 void RadioController::bad_packet_rx() {
   _dwell_timer.stop();
   _bad_packet_count++;
+  _freq_bad_pkt_count[_hop_controller.current_index()]++;
+
+  // If we have recevied a bunch of bad packets on this channel
+  // in a row then reset the freq offset
+  if(_freq_bad_pkt_count[_hop_controller.current_index()] > 3) {
+    _freq_offset_table[_hop_controller.current_index()] = 0;
+    _freq_bad_pkt_count[_hop_controller.current_index()] = 0;
+    log_w("Channel out of sync, resetting offset: {}", _hop_controller.current_index());
+  }
+
+  // After a given number of consecutive bad packets we
+  // need to wait for the transmitter to come back around
   if(_bad_packet_count == BAD_PACKET_CONT_LIM) {
     log_w("Out of sync with station");
   }
+
   handle_hop();
 }
 

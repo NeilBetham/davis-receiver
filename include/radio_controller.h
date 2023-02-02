@@ -44,4 +44,5 @@ private:
   Timer _dwell_timer;
   HopController _hop_controller;
   int32_t _freq_offset_table[51] = {0};
+  uint8_t _freq_bad_pkt_count[51] = {0};
 };
