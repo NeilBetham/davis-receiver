@@ -74,6 +74,7 @@ cc_binary(
     "-lsupc++",
     "-lstdc++",
     "-fno-exceptions",
+    "-Xlinker -Map=/tmp/davis-receiver-pd.map",
   ],
 )
 
