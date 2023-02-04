@@ -3,9 +3,7 @@
 #include "baro.h"
 #include "logging.h"
 
-BaroManager::BaroManager(ReadingReporter& reading_reporter) : _reading_reporter(reading_reporter), _timer(5000, true) {
-  _timer.set_delegate(this);
-  systick_register_delegate(&_timer);
+BaroManager::BaroManager(ReadingReporter& reading_reporter) : _reading_reporter(reading_reporter), _timer(*this, 5000, true) {
   _timer.start();
 }
 

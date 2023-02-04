@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 
-class StatusAnimator : public TimerDelegate {
+class StatusAnimator {
 public:
   StatusAnimator();
   ~StatusAnimator();
@@ -22,7 +22,7 @@ public:
 private:
   void handle_cycle_update(uint32_t progress);
 
-  Timer _timer;
+  Timer<StatusAnimator, &StatusAnimator::timer_event> _timer;
 
   bool _synced = false;
   bool _network_connected = false;

@@ -6,17 +6,19 @@
 
 #define BAD_PACKET_CONT_LIM 5
 
-RadioController::RadioController() : _dwell_timer(PACKET_RX_DWELL_TIME_MS, false) {
-  _dwell_timer.set_delegate(this);
-  systick_register_delegate(&_dwell_timer);
-}
+
+RadioController::RadioController() :
+    _dwell_timer(*this, PACKET_RX_DWELL_TIME_MS, false),
+    _sync_timer(*this, SYNC_RX_LIMIT_TIME_MS, false) {}
 
 void RadioController::init() {
   start_rx(_hop_controller.current_hop());
+  _sync_timer.start();
 }
 
 void RadioController::good_packet_rx() {
   _dwell_timer.stop();
+  _sync_timer.stop();
   _packet_count++;
   _bad_packet_count = 0;
   _last_packet_rx = sys_now();
@@ -48,6 +50,7 @@ void RadioController::bad_packet_rx() {
   // need to wait for the transmitter to come back around
   if(_bad_packet_count == BAD_PACKET_CONT_LIM) {
     log_w("Out of sync with station");
+    out_of_sync();
   }
 
   handle_hop();
@@ -62,6 +65,13 @@ void RadioController::timer_event() {
   bad_packet_rx();
 }
 
+void RadioController::timer_event_two() {
+  log_w("Timed out waiting for resync, hopping to random channel");
+  _hop_controller.hop_random();
+  handle_hop();
+  _sync_timer.start();
+}
+
 void RadioController::handle_hop() {
   uint32_t freq = _hop_controller.current_hop();
   int32_t offset = _freq_offset_table[_hop_controller.current_index()];
@@ -74,6 +84,16 @@ void RadioController::handle_hop() {
   log_i("Hop {} - Freq: {}, Offset: {}", _hop_controller.current_index(), freq, offset);
 
   start_rx(freq + offset);
+}
+
+void RadioController::out_of_sync() {
+  for(uint32_t index = 0; index < 52; index++) {
+    _freq_offset_table[index] = 0;
+    _freq_bad_pkt_count[index] = 0;
+  }
+  _sync_timer.start();
+  _hop_controller.hop_random();
+  handle_hop();
 }
 
 bool RadioController::synced() {

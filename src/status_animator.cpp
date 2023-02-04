@@ -1,7 +1,6 @@
 #include "status_animator.h"
 
 #include "status_led.h"
-#include "sys_tick.h"
 
 #include <math.h>
 
@@ -48,10 +47,7 @@ void convert_hsb_to_rgb(uint32_t hue, uint32_t saturation, uint32_t brightness, 
 
 } // namespace
 
-
-StatusAnimator::StatusAnimator() : _timer(10, true) {
-  _timer.set_delegate(this);
-  systick_register_delegate(&_timer);
+StatusAnimator::StatusAnimator() : _timer(*this, 10, true) {
   _timer.start();
 }
 

@@ -9,6 +9,7 @@
 class HopController {
 public:
   uint32_t hop();
+  uint32_t hop_random();
   uint32_t current_hop();
   uint32_t next_hop();
   uint32_t current_index() { return _current_hop; }

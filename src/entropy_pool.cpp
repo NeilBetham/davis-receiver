@@ -25,7 +25,9 @@ int EntropyPool::get_entropy(uint8_t* outbuf, size_t len, size_t* outlen) {
       uint32_t bytes_to_copy = std::min((uint32_t)len, bytes_left);
 
       memcpy(outbuf, &_entropy_a[_pool_a_pos], bytes_to_copy);
-      *outlen = bytes_to_copy;
+      if(outlen != NULL) {
+        *outlen = bytes_to_copy;
+      }
       _pool_a_pos += bytes_to_copy;
 
       if(_pool_a_pos == _entropy_a.size()) {
@@ -43,7 +45,9 @@ int EntropyPool::get_entropy(uint8_t* outbuf, size_t len, size_t* outlen) {
       uint32_t bytes_to_copy = std::min((uint32_t)len, bytes_left);
 
       memcpy(outbuf, &_entropy_b[_pool_b_pos], bytes_to_copy);
-      *outlen = bytes_to_copy;
+      if(outlen != NULL) {
+        *outlen = bytes_to_copy;
+      }
       _pool_b_pos += bytes_to_copy;
 
       if(_pool_b_pos == _entropy_b.size()) {
@@ -57,7 +61,9 @@ int EntropyPool::get_entropy(uint8_t* outbuf, size_t len, size_t* outlen) {
     }
   }
 
-  *outlen = 0;
+  if(outlen != NULL) {
+    *outlen = 0;
+  }
   return 0;
 }
 
